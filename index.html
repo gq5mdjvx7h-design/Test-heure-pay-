@@ -282,18 +282,7 @@ monthPicker.value = new Date().toISOString().slice(0,7);
 /* =======================
    CALENDRIER
 ======================= */
-function getPreviousCarry(key){
-  const [y,m] = key.split("-").map(Number);
-  let d = new Date(y, m-1, 1);
 
-  while(true){
-    d.setMonth(d.getMonth()-1);
-    const k = d.toISOString().slice(0,7);
-    if(DATA[k]) return DATA[k].carry || 0;
-    if(d.getFullYear() < 2000) break;
-  }
-  return 0;
-}
 function loadMonth(){
   currentKey = monthPicker.value;
 const year = getYearFromMonth(currentKey);
@@ -311,8 +300,7 @@ if(!DATA[currentKey]){
 closingDay.value = DATA[currentKey].closing || 31;
   renderCalendar();
   recalc();
-  const prev = getPreviousCarry(currentKey);
-document.getElementById("prevCarry").textContent = prev.toFixed(2);
+  
 updateLockUI();
 paidHours.value = DATA[currentKey].paid || 0;
 }
