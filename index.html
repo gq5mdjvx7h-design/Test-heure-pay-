@@ -301,33 +301,41 @@ paidHours.oninput = ()=>{
   save();
   recalc();
 };
+
 function renderCalendar(){
   const cal=document.getElementById("calendar");
   cal.innerHTML="";
   const [y,m]=currentKey.split("-").map(Number);
   const days=new Date(y,m,0).getDate();
+
   for(let d=1;d<=days;d++){
     const div=document.createElement("div");
     div.className="day";
+
+    if(d > DATA[currentKey].closing){
+      div.style.opacity = "0.5";
+    }
+
     const today = new Date();
-if(
-  d === today.getDate() &&
-  currentKey === today.toISOString().slice(0,7)
-){
-  div.classList.add("today");
-}
+    if(
+      d === today.getDate() &&
+      currentKey === today.toISOString().slice(0,7)
+    ){
+      div.classList.add("today");
+    }
+
     if(DATA[currentKey].locked)div.classList.add("locked");
+
     const val = DATA[currentKey].days[d];
-div.innerHTML = `<b>${d}</b><br>${val ? val.toFixed(2)+" h" : ""}`;
+    div.innerHTML = `<b>${d}</b><br>${val ? val.toFixed(2)+" h" : ""}`;
+
     div.onclick=()=>{
       if(DATA[currentKey].locked)return alert("Mois verrouillé");
       openHours(d);
     };
+
     cal.appendChild(div);
   }
-}
-if(d > DATA[currentKey].closing){
-  div.style.opacity = "0.5";
 }
 /* =======================
    POPUP HEURES
@@ -435,13 +443,16 @@ function changeCode(){
   const newC = document.getElementById("newCode").value;
   const confC = document.getElementById("confirmCode").value;
 
-  function getSecureCode(){
-  return (localStorage.getItem("HS_CODE") || "").toString();
-}
+  if(oldC !== getSecureCode()){
+    alert("❌ Ancien code incorrect");
+    return;
+  }
+
   if(newC.length < 4){
     alert("⚠️ Le code doit contenir au moins 4 caractères");
     return;
   }
+
   if(newC !== confC){
     alert("❌ Confirmation différente");
     return;
