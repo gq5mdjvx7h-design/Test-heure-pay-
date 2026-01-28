@@ -311,10 +311,10 @@ function renderCalendar(){
   for(let d=1;d<=days;d++){
     const div=document.createElement("div");
     div.className="day";
-
-    if(d > DATA[currentKey].closing){
-      div.style.opacity = "0.5";
-    }
+if(d > DATA[currentKey].closing){
+  div.classList.add("locked");
+  div.onclick = null;
+}
 
     const today = new Date();
     if(
@@ -424,6 +424,22 @@ function calcEuro(h){
   const net=brut*s.coefNet;
   document.getElementById("euroResult").textContent=net.toFixed(2)+" €";
 }
+async function sha256(str){
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2,"0"))
+    .join("");
+}
+
+async function getSecureCode(){
+  let h = localStorage.getItem("HS_CODE_HASH");
+  if(!h){
+    h = await sha256("1234");
+    localStorage.setItem("HS_CODE_HASH", h);
+  }
+  return h;
+}
 async function unlockEuro(){
   const input = document.getElementById("unlockCode").value;
   const inputHash = await sha256(input);
@@ -507,12 +523,13 @@ function exportJSON(){
     {type:"application/json"}
   );
 
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="heures_sup_backup_"+Date.now()+".json";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "heures_sup_backup_"+Date.now()+".json";
   a.click();
 
-  fileDate.textContent = new Date().toLocaleDateString();
+  document.getElementById("fileDate").textContent =
+    new Date().toLocaleDateString();
 }
 function updateLockUI(){
   lockBtn.textContent = DATA[currentKey].locked
@@ -560,9 +577,7 @@ function exportAnnualPDF(){
 
   pdf.save("heures_annuelles.pdf");
 }
-function getSecureCode(){
-  return localStorage.getItem("HS_CODE") || "1234";
-}
+
 loadMonth();
 async function sha256(str){
   const buf = new TextEncoder().encode(str);
