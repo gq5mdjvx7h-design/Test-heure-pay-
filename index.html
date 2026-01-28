@@ -430,19 +430,214 @@ function importJSON(){
 
 /* ================= MODALS ================= */
 function openModal(type){
-  let html="";
-  if(type==="tuto"){
-    html="<h3>🎓 Tutoriel</h3><ol><li>Choisir le mois</li><li>Définir la clôture</li><li>Saisir les heures</li><li>Vérifier les totaux</li><li>Verrouiller</li><li>Sauvegarder</li></ol>";
+  let html = "";
+
+  if(type === "tuto"){
+    html = `
+<h2>🎓 Tutoriel complet – Suivi des heures supplémentaires</h2>
+
+<p>
+Cet outil permet de suivre précisément vos heures supplémentaires
+dans le cadre d’une <b>paie mensuelle</b>, avec gestion des clôtures,
+reports automatiques et génération de documents PDF.
+</p>
+
+<hr>
+
+<h3>1️⃣ Sélection du mois</h3>
+<p>
+Choisissez le mois de travail à l’aide du sélecteur.
+Chaque mois correspond à une <b>période de paie indépendante</b>,
+tout en restant liée aux autres par un système de report automatique.
+</p>
+
+<h3>2️⃣ Définition de la date de clôture</h3>
+<p>
+Indiquez la date de clôture comptable du mois (exemple : le 25).
+</p>
+<ul>
+  <li>Les jours <b>jusqu’à la date de clôture incluse</b> appartiennent au mois courant</li>
+  <li>Les jours <b>après la clôture</b> sont automatiquement reportés au mois suivant</li>
+</ul>
+
+<h3>3️⃣ Saisie des heures</h3>
+<p>
+Cliquez sur un jour du calendrier pour ajouter des heures supplémentaires.
+Une fenêtre s’ouvre avec des choix rapides :
+</p>
+<ul>
+  <li>+15 min</li>
+  <li>+30 min</li>
+  <li>+45 min</li>
+  <li>+1 h / +1 h 15 / +1 h 30 / +2 h</li>
+  <li>Saisie manuelle possible</li>
+</ul>
+
+<h3>4️⃣ Calcul automatique</h3>
+<p>
+Les calculs sont effectués automatiquement :
+</p>
+<ul>
+  <li>Heures majorées à 25 % de la 1ʳᵉ minute à la 8ᵉ heure</li>
+  <li>Heures majorées à 50 % au-delà de 8 heures</li>
+  <li>Prise en compte du report du mois précédent</li>
+</ul>
+
+<h3>5️⃣ Verrouillage de la période</h3>
+<p>
+Une fois le mois validé, vous pouvez verrouiller la période :
+</p>
+<ul>
+  <li>Lecture seule activée</li>
+  <li>Données figées</li>
+  <li>Sécurisation des reports</li>
+</ul>
+
+<h3>6️⃣ Modification après clôture</h3>
+<p>
+Le déverrouillage reste possible.
+Toute modification entraîne un <b>recalcul automatique en cascade</b>
+des mois suivants.
+</p>
+
+<h3>7️⃣ Sauvegarde & documents</h3>
+<ul>
+  <li>🟢 Sauvegarde automatique locale</li>
+  <li>💾 Sauvegarde manuelle dans un fichier</li>
+  <li>📄 PDF période</li>
+  <li>📘 PDF annuel</li>
+  <li>📑 PDF détaillé jour par jour (preuve)</li>
+</ul>
+
+<p style="color:#9aa0a6;font-size:13px">
+💡 Conseil : exportez un PDF après chaque clôture mensuelle.
+</p>
+`;
   }
-  if(type==="notice"){
-    html="<h3>📘 Notice d’utilisation</h3><p>Outil de suivi des heures supplémentaires dans le cadre d’une paie mensuelle avec report automatique.</p>";
+  if(type === "notice"){
+    html = `
+<h2>📘 Notice utilisateur</h2>
+
+<p>
+Cette application est un <b>outil personnel de suivi des heures supplémentaires</b>.
+Elle permet de vérifier, comprendre et justifier les heures travaillées
+dans le cadre d’une paie mensuelle.
+</p>
+
+<hr>
+
+<h3>🗓️ Organisation des périodes</h3>
+<p>
+Le suivi est structuré par <b>mois de paie</b>.
+Chaque mois contient :
+</p>
+<ul>
+  <li>Une date de clôture comptable</li>
+  <li>Un total d’heures supplémentaires</li>
+  <li>Un report entrant</li>
+  <li>Un reliquat sortant</li>
+</ul>
+
+<p>
+Les périodes sont liées entre elles par un système de <b>report automatique</b>.
+Ainsi, un reliquat non payé est reporté sur le mois suivant,
+même si les mois intermédiaires n’ont jamais été consultés.
+</p>
+
+<h3>⏱️ Heures supplémentaires</h3>
+<ul>
+  <li>De 1 minute à 8 heures : majoration 25 %</li>
+  <li>Au-delà de 8 heures : majoration 50 %</li>
+</ul>
+
+<h3>💶 Estimation financière</h3>
+<p>
+Les montants en euros sont calculés à partir :
+</p>
+<ul>
+  <li>Du taux horaire brut</li>
+  <li>Des coefficients de majoration</li>
+  <li>Du coefficient brut → net</li>
+</ul>
+
+<p>
+Les montants sont volontairement <b>floutés par défaut</b>
+et nécessitent un déverrouillage manuel.
+</p>
+
+<h3>🔒 Sécurité & fiabilité</h3>
+<ul>
+  <li>Verrouillage mensuel réversible</li>
+  <li>Recalcul automatique en cas de modification</li>
+  <li>Sauvegarde locale permanente</li>
+</ul>
+
+<h3>📄 Documents PDF</h3>
+<p>
+Les documents générés permettent de conserver une trace fiable :
+</p>
+<ul>
+  <li>PDF mensuel</li>
+  <li>PDF annuel</li>
+  <li>PDF détaillé jour par jour</li>
+</ul>
+
+<p style="font-size:12px;color:#9aa0a6">
+Cet outil est un support de suivi personnel et ne remplace
+pas les documents officiels de l’employeur.
+</p>
+`;
   }
-  if(type==="legal"){
-    html="<h3>ℹ️ Informations légales</h3><p>Calcul conforme au Code du travail et à la convention collective du commerce de gros.</p><p>Document informatif.</p>";
+  if(type === "legal"){
+    html = `
+<h2>ℹ️ Informations légales & règles de calcul</h2>
+
+<p>
+Cet outil a pour objectif d’aider au suivi et à la compréhension
+des heures supplémentaires dans un cadre personnel.
+</p>
+
+<hr>
+
+<h3>📚 Références réglementaires</h3>
+<p>
+Les règles appliquées s’appuient sur :
+</p>
+<ul>
+  <li>Le Code du travail</li>
+  <li>La convention collective nationale du commerce de gros</li>
+</ul>
+
+<h3>➕ Heures supplémentaires</h3>
+<ul>
+  <li>De la 1ʳᵉ minute à la 8ᵉ heure : majoration 25 %</li>
+  <li>Au-delà de 8 heures : majoration 50 %</li>
+</ul>
+
+<h3>📑 Valeur probante</h3>
+<p>
+Les exports PDF détaillés peuvent servir de <b>support de justification</b>
+en cas de litige, sans se substituer aux documents officiels
+(bulletins de paie, relevés employeur).
+</p>
+
+<h3>⚠️ Limites de responsabilité</h3>
+<ul>
+  <li>Cet outil n’est pas un logiciel de paie</li>
+  <li>Il ne constitue pas un document contractuel</li>
+  <li>Les résultats sont fournis à titre indicatif</li>
+</ul>
+
+<p style="font-size:12px;color:#9aa0a6">
+© C. Anthony – Tous droits réservés
+</p>
+`;
   }
-  modalContent.innerHTML=html+"<br><button onclick='closeModal()'>Fermer</button>";
-  modal.style.display="flex";
+
+  modalContent.innerHTML = html + "<br><button onclick='closeModal()'>Fermer</button>";
+  modal.style.display = "flex";
 }
+   
 function closeModal(){modal.style.display="none"}
 </script>
 
