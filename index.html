@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <title>Heures supplémentaires – Paie mensuelle</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-/* =========================
-   THÈME SOMBRE PRO
-========================= */
+/* =======================
+   MODE SOMBRE – GLOBAL
+======================= */
 :root{
   --bg:#0f1115;
   --card:#1c1f26;
@@ -18,628 +17,386 @@
   --accent:#4f8cff;
   --danger:#c0392b;
   --success:#2ecc71;
-  --warning:#f39c12;
 }
-
 body{
+  margin:0;
+  padding:15px;
   background:var(--bg);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;
-  margin:0;
-  padding:15px;
+}
+h1,h2,h3{text-align:center}
+button{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  background:var(--accent);
+  color:white;
+  font-size:15px;
+  margin-top:6px;
+}
+button.secondary{background:#2a2f3a}
+button.danger{background:var(--danger)}
+input,select{
+  width:100%;
+  padding:8px;
+  margin-top:6px;
+  background:#262a33;
+  color:var(--text);
+  border:1px solid #333;
+  border-radius:6px;
 }
 
-h1,h2,h3{text-align:center}
-
+/* =======================
+   CARTES
+======================= */
 .card{
   background:var(--card);
   padding:15px;
   border-radius:12px;
-  max-width:1000px;
-  margin:15px auto;
+  margin-top:15px;
 }
 
-button,input{
-  background:#262a33;
-  color:var(--text);
-  border:1px solid #333;
-  border-radius:8px;
-  padding:8px;
-}
-
-button{background:var(--accent);border:none;cursor:pointer}
-button.secondary{background:#2a2f3a}
-button.danger{background:var(--danger)}
-
-.badge{
-  display:inline-block;
-  padding:4px 10px;
-  border-radius:20px;
-  font-size:12px;
-  margin-right:8px;
-}
-.badge.success{background:#1e4620;color:#7dff9e}
-.badge.info{background:#1e3a5f;color:#9fd0ff}
-
+/* =======================
+   CALENDRIER
+======================= */
 .calendar{
   display:grid;
   grid-template-columns:repeat(7,1fr);
   gap:6px;
 }
-.weekday{text-align:center;font-weight:bold;font-size:12px;color:var(--muted)}
-
+.weekday{
+  text-align:center;
+  font-weight:bold;
+  font-size:12px;
+}
 .day{
   background:#262a33;
   border-radius:8px;
   padding:6px;
   text-align:center;
-  min-height:75px;
   cursor:pointer;
+  min-height:60px;
 }
-.day.today{outline:3px solid var(--warning)}
-.day.out{opacity:.35}
-.day.locked{cursor:not-allowed;opacity:.45}
-.day .h{font-weight:bold;margin-top:4px}
+.day.today{
+  border:2px solid #ff9500;
+}
+.day.locked{
+  opacity:.4;
+  cursor:not-allowed;
+}
 
-.blur{filter:blur(8px)}
-
+/* =======================
+   MODALES
+======================= */
 .modal{
-  position:fixed;inset:0;
+  position:fixed;
+  inset:0;
   background:rgba(0,0,0,.7);
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:5000;
+  z-index:3000;
 }
 .modal-content{
   background:var(--card);
   padding:20px;
   border-radius:12px;
-  max-width:650px;
   width:90%;
-  max-height:85vh;
-  overflow:auto;
+  max-width:420px;
+}
+#hoursChoices button{
+  background:#2a2f3a;
 }
 
-.footer{
-  max-width:1000px;
-  margin:30px auto;
-  font-size:12px;
-  color:#888;
-  text-align:center;
+/* =======================
+   FLOU €
+======================= */
+.blur{
+  filter:blur(8px);
 }
-.footer a{color:#aaa;margin:0 6px;text-decoration:none}
+
+/* =======================
+   BADGES
+======================= */
+.badge{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:12px;
+  font-size:12px;
+}
+.badge.ok{background:#1b5e20}
+.badge.file{background:#283593}
 </style>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
 
-<h1>🧾 Heures supplémentaires – Paie mensuelle</h1>
-
-<!-- ================= PÉRIODE ================= -->
+<h1>⏱️ Heures supplémentaires</h1>
+<button onclick="openTutorial()"
+style="position:fixed;top:15px;right:15px;z-index:4000;">
+❓ Tutoriel
+</button>
 <div class="card">
-  <h2>📅 Période de paie</h2>
-
-  <label>Mois affiché</label>
+  <label>Mois suivi</label>
   <input type="month" id="monthPicker">
-
-  <label>Jour de clôture comptable</label>
+  <label>Jour de clôture mensuelle</label>
   <input type="number" id="closingDay" min="1" max="31">
-
-  <p id="periodInfo"></p>
-
-  <button id="lockBtn" onclick="toggleLock()">🔓 Période déverrouillée</button>
 </div>
 
-<!-- ================= CALENDRIER ================= -->
+<div class="calendar card" id="calendar"></div>
+
 <div class="card">
-  <div class="calendar" id="calendar"></div>
+  <h3>Récapitulatif</h3>
+  <p>Report précédent : <b id="prevCarry">0.00</b> h</p>
+  <p>Total mois : <b id="totalMonth">0.00</b> h</p>
+  <p>Heures payées : <input type="number" id="paidHours" step="0.25"></p>
+  <p>Reliquat reporté : <b id="carryOver">0.00</b> h</p>
 
-  <br>
-  <span class="badge success" id="autoSave">🟢 Sauvegarde automatique locale</span>
-  <span class="badge info" id="fileSave">💾 Aucune sauvegarde fichier</span>
-
-  <br><br>
-  <button onclick="exportJSON()">💾 Sauvegarde dans un fichier</button>
-  <button onclick="exportPDFMonth()">📄 PDF période</button>
-  <button onclick="exportPDFDetailed()">📄 PDF détaillé</button>
-  <button onclick="exportPDFYear()">📘 PDF annuel</button>
+  <button id="lockBtn">🔓 Mois modifiable</button>
 </div>
 
-<!-- ================= TOTAUX ================= -->
 <div class="card">
-  <h2>📊 Totaux période</h2>
-
-  <p>Total heures supplémentaires : <b id="totalH">0.00 h</b></p>
-
-  <p>Heures payées ce mois :
-    <input type="number" id="paid" step="0.25">
-  </p>
-
-  <p>Reliquat reporté : <b id="carry">0.00 h</b></p>
-
-  <div id="euroZone" class="blur">
-    <h3>💶 Valeur estimée</h3>
-    <p id="euros">0 €</p>
+  <h3>💰 Valeur €</h3>
+  <div id="euroBox" class="blur">
+    <label>Taux horaire (€)</label>
+    <input type="number" id="rate">
+    <label>Coef 25 %</label>
+    <input type="number" id="coef25">
+    <label>Coef 50 %</label>
+    <input type="number" id="coef50">
+    <label>Coef brut → net</label>
+    <input type="number" id="coefNet">
+    <p><b id="euroResult">0.00 €</b></p>
   </div>
-
-  <input type="password" id="codeInput" placeholder="Code pour afficher les montants">
-  <button onclick="unlockEuros()">Déverrouiller</button>
+  <input type="password" id="unlockCode" placeholder="Code (1234)">
+  <button onclick="unlockEuro()">Déverrouiller</button>
 </div>
 
-<!-- ================= CONFIG ================= -->
 <div class="card">
-  <h2>🔧 Configuration</h2>
-  <button class="secondary" onclick="importJSON()">♻️ Restaurer depuis un fichier</button>
+  <span class="badge ok">🟢 Sauvegarde locale auto</span>
+  <span class="badge file">💾 Dernier fichier : <span id="fileDate">—</span></span>
+  <button onclick="exportJSON()">💾 Sauvegarde dans un fichier</button>
+   <button onclick="exportMonthlyPDF()">📄 PDF mensuel détaillé</button>
+<button onclick="exportAnnualPDF()">📕 PDF annuel récapitulatif</button>
 </div>
 
-<!-- ================= FOOTER ================= -->
-<div class="footer">
-  © Tous droits réservés – C. Anthony ·
-  <a href="#" onclick="openModal('tuto')">❓ Tutoriel</a> ·
-  <a href="#" onclick="openModal('notice')">📘 Notice d’utilisation</a> ·
-  <a href="#" onclick="openModal('legal')">ℹ️ Informations légales</a>
+<!-- =======================
+     POPUP HEURES
+======================= -->
+<div class="modal" id="hoursModal">
+  <div class="modal-content">
+    <h3>⏱️ Ajouter des heures</h3>
+    <div id="hoursChoices"></div>
+    <label>Saisie manuelle</label>
+    <input type="number" id="manualHours" step="0.25">
+    <button onclick="confirmManual()">Valider</button>
+    <button class="secondary" onclick="closeHours()">Annuler</button>
+  </div>
 </div>
+<div class="modal" id="tutorialModal">
+  <div class="modal-content" style="max-width:700px;max-height:80vh;overflow:auto;">
+    <h2>📘 Tutoriel – Suivi des heures supplémentaires</h2>
 
-<!-- ================= MODAL ================= -->
-<div class="modal" id="modal">
-  <div class="modal-content" id="modalContent"></div>
+    <h3>1️⃣ Principe général</h3>
+    <p>
+      Cet outil permet de suivre les heures supplémentaires dans le cadre
+      d’une <b>paie mensuelle</b>, avec report automatique des reliquats.
+    </p>
+
+    <h3>2️⃣ Saisie des heures</h3>
+    <ul>
+      <li>Clique sur un jour</li>
+      <li>Choisis +15 min, +30 min, +1h… ou saisis manuellement</li>
+      <li>Les heures sont enregistrées automatiquement</li>
+    </ul>
+
+    <h3>3️⃣ Clôture mensuelle</h3>
+    <p>
+      Le jour de clôture définit la fin de la période de paie.
+      Les heures après cette date sont automatiquement reportées.
+    </p>
+
+    <h3>4️⃣ Zone €</h3>
+    <p>
+      Les montants sont floutés par défaut et protégés par code.
+    </p>
+
+    <button class="secondary" onclick="closeTutorial()">Fermer</button>
+  </div>
 </div>
-
 <script>
-/* ================= DONNÉES ================= */
-const PREFIX="PAIE_MENSUELLE_V42_";
-const today=new Date();
-let currentMonth="";
-let data={};
+/* =======================
+   DONNÉES
+======================= */
+let DATA = JSON.parse(localStorage.getItem("HS_DATA")||"{}");
+let SETTINGS = JSON.parse(localStorage.getItem("HS_SETTINGS")||"{}");
+let currentKey="", currentDay=null, unlocked=false;
 
-const mp=document.getElementById("monthPicker");
-mp.value=today.toISOString().slice(0,7);
-mp.onchange=loadMonth;
-
-paid.oninput=()=>{data.paid=+paid.value||0;save();calc();}
-closingDay.onchange=()=>{data.closing=+closingDay.value;save();build();calc();}
-
-function key(m){return PREFIX+m}
-
-/* ================= LOAD ================= */
-function loadMonth(){
-  currentMonth=mp.value;
-  data=JSON.parse(localStorage.getItem(key(currentMonth)))||{
-    days:{},paid:0,carry:0,closing:31,locked:false
-  };
-  paid.value=data.paid;
-  closingDay.value=data.closing;
-  updateLock();
-  build();
-  calc();
-}
+/* =======================
+   INIT
+======================= */
+const monthPicker = document.getElementById("monthPicker");
+monthPicker.value = new Date().toISOString().slice(0,7);
 loadMonth();
 
-/* ================= CALENDRIER ================= */
-function build(){
-  calendar.innerHTML="";
-  ["L","M","M","J","V","S","D"].forEach(d=>{
-    let w=document.createElement("div");
-    w.className="weekday";w.textContent=d;
-    calendar.appendChild(w);
-  });
+/* =======================
+   CALENDRIER
+======================= */
+function loadMonth(){
+  currentKey = monthPicker.value;
+  if(!DATA[currentKey]){
+    DATA[currentKey]={days:{},paid:0,carry:0,closing:31,locked:false};
+  }
+  renderCalendar();
+  recalc();
+}
+monthPicker.onchange=loadMonth;
 
-  const [y,m]=currentMonth.split("-").map(Number);
+function renderCalendar(){
+  const cal=document.getElementById("calendar");
+  cal.innerHTML="";
+  const [y,m]=currentKey.split("-").map(Number);
   const days=new Date(y,m,0).getDate();
-  const first=(new Date(y,m-1,1).getDay()+6)%7;
-  for(let i=0;i<first;i++)calendar.appendChild(document.createElement("div"));
-
-  const start=new Date(y,m-1,data.closing+1);start.setMonth(start.getMonth()-1);
-  const end=new Date(y,m-1,data.closing);
-
   for(let d=1;d<=days;d++){
     const div=document.createElement("div");
-    const date=new Date(y,m-1,d);
-    const h=data.days[d]||0;
-
-    div.className="day"+(date<start||date>end?" out":"");
-    if(data.locked)div.classList.add("locked");
-    if(date.toDateString()===today.toDateString())div.classList.add("today");
-
-    div.innerHTML=`<div>${d}</div><div class="h">${h?h.toFixed(2)+"h":""}</div>`;
-
+    div.className="day";
+    if(d===new Date().getDate())div.classList.add("today");
+    if(DATA[currentKey].locked)div.classList.add("locked");
+    div.innerHTML=`<b>${d}</b><br>${DATA[currentKey].days[d]||""}`;
     div.onclick=()=>{
-      if(data.locked){
-        alert("🔒 Période verrouillée (lecture seule)");
-        return;
-      }
-      const options=[0.25,0.5,0.75,1,1.25,1.5,2];
-      const v=prompt(
-        "Heures supplémentaires (15 min = 0.25)\nExemples : 0.25 / 0.5 / 1 / 2",
-        h||""
-      );
-      const val=parseFloat(v);
-      if(!isNaN(val)){
-        data.days[d]=val;
-        save();build();calc();
-      }
+      if(DATA[currentKey].locked)return alert("Mois verrouillé");
+      openHours(d);
     };
-
-    calendar.appendChild(div);
+    cal.appendChild(div);
   }
-
-  periodInfo.innerHTML=`Période comptable : ${start.toLocaleDateString()} → ${end.toLocaleDateString()}`;
 }
 
-/* ================= REPORT EN CASCADE ================= */
-function getPrevCarry(){
-  let d=new Date(currentMonth+"-01");
-  while(true){
-    d.setMonth(d.getMonth()-1);
-    const k=d.toISOString().slice(0,7);
-    const o=JSON.parse(localStorage.getItem(key(k)));
-    if(o) return o.carry||0;
-    if(d.getFullYear()<2000) break;
-  }
-  return 0;
+/* =======================
+   POPUP HEURES
+======================= */
+function openHours(d){
+  currentDay=d;
+  const c=document.getElementById("hoursChoices");
+  c.innerHTML="";
+  [0.25,0.5,0.75,1,1.25,1.5,2].forEach(v=>{
+    const b=document.createElement("button");
+    b.textContent="+"+v+" h";
+    b.onclick=()=>applyHours(v);
+    c.appendChild(b);
+  });
+  document.getElementById("hoursModal").style.display="flex";
+}
+function closeHours(){
+  document.getElementById("hoursModal").style.display="none";
+}
+function applyHours(h){
+  DATA[currentKey].days[currentDay]=h;
+  save();
+  recalc();
+  closeHours();
+}
+function confirmManual(){
+  const h=parseFloat(document.getElementById("manualHours").value);
+  if(isNaN(h))return;
+  applyHours(h);
 }
 
-/* ================= CALCUL ================= */
-function calc(){
-  let total=Object.values(data.days).reduce((a,b)=>a+b,0);
-
-  let h25=Math.min(total,8);
-  let h50=Math.max(0,total-8);
-
-  const prev=getPrevCarry();
-  const brut=h25*1.25+h50*1.5+prev;
-  const net=brut-(data.paid||0);
-
-  data.carry=net;
-
-  totalH.textContent=total.toFixed(2)+" h";
-  carry.textContent=net.toFixed(2)+" h";
-  euros.textContent=(net*20).toFixed(2)+" €";
-
+/* =======================
+   CALCUL
+======================= */
+function recalc(){
+  let total=Object.values(DATA[currentKey].days).reduce((a,b)=>a+b,0);
+  const paid=parseFloat(DATA[currentKey].paid)||0;
+  const carry=Math.max(0,total-paid);
+  DATA[currentKey].carry=carry;
+  document.getElementById("totalMonth").textContent=total.toFixed(2);
+  document.getElementById("carryOver").textContent=carry.toFixed(2);
+  calcEuro(total);
   save();
 }
 
-/* ================= LOCK ================= */
-function toggleLock(){
-  if(data.locked && !confirm("Déverrouiller la période ?\nToute modification recalculera les mois suivants.")) return;
-  data.locked=!data.locked;
-  save();updateLock();
+/* =======================
+   € CALCUL
+======================= */
+function calcEuro(h){
+  if(!unlocked)return;
+  const s=SETTINGS;
+  const h25=Math.min(h,8);
+  const h50=Math.max(0,h-8);
+  const brut=(h25*s.rate*s.coef25)+(h50*s.rate*s.coef50);
+  const net=brut*s.coefNet;
+  document.getElementById("euroResult").textContent=net.toFixed(2)+" €";
 }
-function updateLock(){
-  lockBtn.textContent=data.locked?"🔒 Période verrouillée":"🔓 Période déverrouillée";
-  lockBtn.style.background=data.locked?"var(--danger)":"var(--accent)";
+function unlockEuro(){
+  if(document.getElementById("unlockCode").value==="1234"){
+    unlocked=true;
+    document.getElementById("euroBox").classList.remove("blur");
+    calcEuro(Object.values(DATA[currentKey].days).reduce((a,b)=>a+b,0));
+  }
 }
 
-/* ================= SAVE ================= */
+/* =======================
+   SAUVEGARDE
+======================= */
 function save(){
-  localStorage.setItem(key(currentMonth),JSON.stringify(data));
-  autoSave.textContent="🟢 Sauvegarde automatique locale – "+new Date().toLocaleTimeString();
+  localStorage.setItem("HS_DATA",JSON.stringify(DATA));
 }
-
-/* ================= EUROS ================= */
-function unlockEuros(){
-  if(codeInput.value==="1234") euroZone.classList.remove("blur");
-  else alert("Code incorrect");
-}
-
-/* ================= PDF ================= */
-function exportPDFMonth(){
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
-  pdf.text("Récapitulatif période de paie",10,15);
-  pdf.text("Mois : "+currentMonth,10,25);
-  pdf.text("Total heures sup : "+totalH.textContent,10,35);
-  pdf.text("Reliquat : "+carry.textContent,10,45);
-  pdf.text("Document informatif – ne constitue pas un bulletin de paie.",10,80);
-  pdf.save("periode_"+currentMonth+".pdf");
-}
-
-function exportPDFDetailed(){
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
-
-  const [y,m]=currentMonth.split("-").map(Number);
-  const start=new Date(y,m-1,data.closing+1);start.setMonth(start.getMonth()-1);
-  const end=new Date(y,m-1,data.closing);
-
-  let yPos=15;
-  pdf.setFontSize(14);
-  pdf.text("Heures supplémentaires – Détail mensuel",10,yPos);
-  yPos+=8;
-
-  pdf.setFontSize(10);
-  pdf.text(`Période : ${start.toLocaleDateString()} → ${end.toLocaleDateString()}`,10,yPos);
-  yPos+=6;
-  pdf.text(`Statut : ${data.locked?"Verrouillée":"Modifiable"}`,10,yPos);
-  yPos+=8;
-
-  pdf.line(10,yPos,200,yPos);yPos+=6;
-
-  Object.keys(data.days).sort((a,b)=>a-b).forEach(d=>{
-    const date=new Date(y,m-1,d);
-    if(date<start||date>end) return;
-    const h=data.days[d];
-    if(!h) return;
-    pdf.text(`${date.toLocaleDateString()} : ${h.toFixed(2)} h`,12,yPos);
-    yPos+=4;
-    if(yPos>270){pdf.addPage();yPos=15;}
-  });
-
-  pdf.addPage();
-  yPos=15;
-
-  let total=Object.values(data.days).reduce((a,b)=>a+b,0);
-  let h25=Math.min(total,8);
-  let h50=Math.max(0,total-8);
-  const prev=getPrevCarry();
-  const brut=h25*1.25+h50*1.5+prev;
-  const net=brut-(data.paid||0);
-
-  pdf.text("Récapitulatif",10,yPos);yPos+=8;
-  pdf.text(`Heures totales : ${total.toFixed(2)} h`,10,yPos);yPos+=5;
-  pdf.text(`25 % : ${h25.toFixed(2)} h`,10,yPos);yPos+=5;
-  pdf.text(`50 % : ${h50.toFixed(2)} h`,10,yPos);yPos+=5;
-  pdf.text(`Report précédent : ${prev.toFixed(2)} h`,10,yPos);yPos+=5;
-  pdf.text(`Reliquat final : ${net.toFixed(2)} h`,10,yPos);yPos+=8;
-  pdf.text(`Valeur estimée : ${(net*20).toFixed(2)} €`,10,yPos);
-
-  yPos+=12;
-  pdf.setFontSize(8);
-  pdf.text(
-    "Document informatif – calcul basé sur le Code du travail\n" +
-    "et la convention collective du commerce de gros.\n" +
-    "Ne constitue pas un bulletin de paie.",
-    10,yPos
-  );
-
-  pdf.save(`detail_heures_${currentMonth}.pdf`);
-}
-
-function exportPDFYear(){
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
-  pdf.text("Récapitulatif annuel – Heures supplémentaires",10,15);
-  pdf.text("Document informatif.",10,30);
-  pdf.save("annuel_"+new Date().getFullYear()+".pdf");
-}
-
-/* ================= JSON ================= */
 function exportJSON(){
-  const blob=new Blob([JSON.stringify(localStorage,null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({DATA,SETTINGS},null,2)],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
-  a.download="sauvegarde_heures_sup.json";
+  a.download="heures_sup.json";
   a.click();
-  fileSave.textContent="💾 Dernière sauvegarde fichier : "+new Date().toLocaleDateString();
+  document.getElementById("fileDate").textContent=new Date().toLocaleDateString();
 }
-function importJSON(){
-  const i=document.createElement("input");
-  i.type="file";i.accept=".json";
-  i.onchange=e=>{
-    const r=new FileReader();
-    r.onload=()=>{
-      const o=JSON.parse(r.result);
-      Object.keys(o).forEach(k=>localStorage.setItem(k,o[k]));
-      location.reload();
-    }
-    r.readAsText(e.target.files[0]);
+
+/* =======================
+   PARAMS €
+======================= */
+["rate","coef25","coef50","coefNet"].forEach(id=>{
+  document.getElementById(id).value=SETTINGS[id]|| (id==="coefNet"?0.93:(id==="rate"?20:1.25));
+  document.getElementById(id).onchange=()=>{
+    SETTINGS[id]=parseFloat(document.getElementById(id).value)||0;
+    localStorage.setItem("HS_SETTINGS",JSON.stringify(SETTINGS));
+    recalc();
   };
-  i.click();
+});
+   function openTutorial(){
+  document.getElementById("tutorialModal").style.display = "flex";
 }
-
-/* ================= MODALS ================= */
-function openModal(type){
-  let html = "";
-
-  if(type === "tuto"){
-    html = `
-<h2>🎓 Tutoriel complet – Suivi des heures supplémentaires</h2>
-
-<p>
-Cet outil permet de suivre précisément vos heures supplémentaires
-dans le cadre d’une <b>paie mensuelle</b>, avec gestion des clôtures,
-reports automatiques et génération de documents PDF.
-</p>
-
-<hr>
-
-<h3>1️⃣ Sélection du mois</h3>
-<p>
-Choisissez le mois de travail à l’aide du sélecteur.
-Chaque mois correspond à une <b>période de paie indépendante</b>,
-tout en restant liée aux autres par un système de report automatique.
-</p>
-
-<h3>2️⃣ Définition de la date de clôture</h3>
-<p>
-Indiquez la date de clôture comptable du mois (exemple : le 25).
-</p>
-<ul>
-  <li>Les jours <b>jusqu’à la date de clôture incluse</b> appartiennent au mois courant</li>
-  <li>Les jours <b>après la clôture</b> sont automatiquement reportés au mois suivant</li>
-</ul>
-
-<h3>3️⃣ Saisie des heures</h3>
-<p>
-Cliquez sur un jour du calendrier pour ajouter des heures supplémentaires.
-Une fenêtre s’ouvre avec des choix rapides :
-</p>
-<ul>
-  <li>+15 min</li>
-  <li>+30 min</li>
-  <li>+45 min</li>
-  <li>+1 h / +1 h 15 / +1 h 30 / +2 h</li>
-  <li>Saisie manuelle possible</li>
-</ul>
-
-<h3>4️⃣ Calcul automatique</h3>
-<p>
-Les calculs sont effectués automatiquement :
-</p>
-<ul>
-  <li>Heures majorées à 25 % de la 1ʳᵉ minute à la 8ᵉ heure</li>
-  <li>Heures majorées à 50 % au-delà de 8 heures</li>
-  <li>Prise en compte du report du mois précédent</li>
-</ul>
-
-<h3>5️⃣ Verrouillage de la période</h3>
-<p>
-Une fois le mois validé, vous pouvez verrouiller la période :
-</p>
-<ul>
-  <li>Lecture seule activée</li>
-  <li>Données figées</li>
-  <li>Sécurisation des reports</li>
-</ul>
-
-<h3>6️⃣ Modification après clôture</h3>
-<p>
-Le déverrouillage reste possible.
-Toute modification entraîne un <b>recalcul automatique en cascade</b>
-des mois suivants.
-</p>
-
-<h3>7️⃣ Sauvegarde & documents</h3>
-<ul>
-  <li>🟢 Sauvegarde automatique locale</li>
-  <li>💾 Sauvegarde manuelle dans un fichier</li>
-  <li>📄 PDF période</li>
-  <li>📘 PDF annuel</li>
-  <li>📑 PDF détaillé jour par jour (preuve)</li>
-</ul>
-
-<p style="color:#9aa0a6;font-size:13px">
-💡 Conseil : exportez un PDF après chaque clôture mensuelle.
-</p>
-`;
-  }
-  if(type === "notice"){
-    html = `
-<h2>📘 Notice utilisateur</h2>
-
-<p>
-Cette application est un <b>outil personnel de suivi des heures supplémentaires</b>.
-Elle permet de vérifier, comprendre et justifier les heures travaillées
-dans le cadre d’une paie mensuelle.
-</p>
-
-<hr>
-
-<h3>🗓️ Organisation des périodes</h3>
-<p>
-Le suivi est structuré par <b>mois de paie</b>.
-Chaque mois contient :
-</p>
-<ul>
-  <li>Une date de clôture comptable</li>
-  <li>Un total d’heures supplémentaires</li>
-  <li>Un report entrant</li>
-  <li>Un reliquat sortant</li>
-</ul>
-
-<p>
-Les périodes sont liées entre elles par un système de <b>report automatique</b>.
-Ainsi, un reliquat non payé est reporté sur le mois suivant,
-même si les mois intermédiaires n’ont jamais été consultés.
-</p>
-
-<h3>⏱️ Heures supplémentaires</h3>
-<ul>
-  <li>De 1 minute à 8 heures : majoration 25 %</li>
-  <li>Au-delà de 8 heures : majoration 50 %</li>
-</ul>
-
-<h3>💶 Estimation financière</h3>
-<p>
-Les montants en euros sont calculés à partir :
-</p>
-<ul>
-  <li>Du taux horaire brut</li>
-  <li>Des coefficients de majoration</li>
-  <li>Du coefficient brut → net</li>
-</ul>
-
-<p>
-Les montants sont volontairement <b>floutés par défaut</b>
-et nécessitent un déverrouillage manuel.
-</p>
-
-<h3>🔒 Sécurité & fiabilité</h3>
-<ul>
-  <li>Verrouillage mensuel réversible</li>
-  <li>Recalcul automatique en cas de modification</li>
-  <li>Sauvegarde locale permanente</li>
-</ul>
-
-<h3>📄 Documents PDF</h3>
-<p>
-Les documents générés permettent de conserver une trace fiable :
-</p>
-<ul>
-  <li>PDF mensuel</li>
-  <li>PDF annuel</li>
-  <li>PDF détaillé jour par jour</li>
-</ul>
-
-<p style="font-size:12px;color:#9aa0a6">
-Cet outil est un support de suivi personnel et ne remplace
-pas les documents officiels de l’employeur.
-</p>
-`;
-  }
-  if(type === "legal"){
-    html = `
-<h2>ℹ️ Informations légales & règles de calcul</h2>
-
-<p>
-Cet outil a pour objectif d’aider au suivi et à la compréhension
-des heures supplémentaires dans un cadre personnel.
-</p>
-
-<hr>
-
-<h3>📚 Références réglementaires</h3>
-<p>
-Les règles appliquées s’appuient sur :
-</p>
-<ul>
-  <li>Le Code du travail</li>
-  <li>La convention collective nationale du commerce de gros</li>
-</ul>
-
-<h3>➕ Heures supplémentaires</h3>
-<ul>
-  <li>De la 1ʳᵉ minute à la 8ᵉ heure : majoration 25 %</li>
-  <li>Au-delà de 8 heures : majoration 50 %</li>
-</ul>
-
-<h3>📑 Valeur probante</h3>
-<p>
-Les exports PDF détaillés peuvent servir de <b>support de justification</b>
-en cas de litige, sans se substituer aux documents officiels
-(bulletins de paie, relevés employeur).
-</p>
-
-<h3>⚠️ Limites de responsabilité</h3>
-<ul>
-  <li>Cet outil n’est pas un logiciel de paie</li>
-  <li>Il ne constitue pas un document contractuel</li>
-  <li>Les résultats sont fournis à titre indicatif</li>
-</ul>
-
-<p style="font-size:12px;color:#9aa0a6">
-© C. Anthony – Tous droits réservés
-</p>
-`;
-  }
-
-  modalContent.innerHTML = html + "<br><button onclick='closeModal()'>Fermer</button>";
-  modal.style.display = "flex";
+function closeTutorial(){
+  document.getElementById("tutorialModal").style.display = "none";
 }
-   
-function closeModal(){modal.style.display="none"}
 </script>
+<div class="card" style="font-size:13px;color:#aaa">
+  <h3>📘 Notice utilisateur</h3>
+
+  <p>
+    Cet outil est destiné au suivi personnel des heures supplémentaires
+    dans le cadre d’une rémunération mensuelle.
+  </p>
+
+  <p>
+    Les calculs sont indicatifs et reposent sur les principes généraux :
+  </p>
+
+  <ul>
+    <li>Code du travail</li>
+    <li>Convention collective du commerce de gros (IDCC 573)</li>
+  </ul>
+
+  <p>
+    ⚠️ En cas de litige, seuls les bulletins de paie et documents
+    officiels de l’employeur font foi.
+  </p>
+</div>
+<footer style="margin-top:30px;text-align:center;font-size:12px;color:#777">
+  © Tous droits réservés – C. Anthony<br>
+  Outil indicatif – ne constitue pas un bulletin de paie
+</footer>
 
 </body>
 </html>
