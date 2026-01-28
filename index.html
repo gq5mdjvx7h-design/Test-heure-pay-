@@ -228,6 +228,11 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
   </div>
 </div>
 <script>
+paidHours.oninput = ()=>{
+  DATA[currentKey].paid = parseFloat(paidHours.value) || 0;
+  save();
+  recalc();
+};
 /* =======================
    DONNÉES
 ======================= */
@@ -248,12 +253,35 @@ loadMonth();
 function loadMonth(){
   currentKey = monthPicker.value;
   if(!DATA[currentKey]){
-    DATA[currentKey]={days:{},paid:0,carry:0,closing:31,locked:false};
-  }
+  DATA[currentKey]={days:{},paid:0,carry:0,closing:31,locked:false};
+}
+closingDay.value = DATA[currentKey].closing || 31;
   renderCalendar();
+  function getPreviousCarry(key){
+  const [y,m] = key.split("-").map(Number);
+  let d = new Date(y, m-1, 1);
+
+  while(true){
+    d.setMonth(d.getMonth()-1);
+    const k = d.toISOString().slice(0,7);
+    if(DATA[k]) return DATA[k].carry || 0;
+    if(d.getFullYear() < 2000) break;
+  }
+  return 0;
+}
   recalc();
 }
 monthPicker.onchange=loadMonth;
+const closingDayInput = document.getElementById("closingDay");
+closingDayInput.onchange = ()=>{
+  DATA[currentKey].closing = parseInt(closingDayInput.value) || 31;
+  save();
+  recalc();
+};
+const prev = getPreviousCarry(currentKey);
+document.getElementById("prevCarry").textContent = prev.toFixed(2);
+updateLockUI();
+paidHours.value = DATA[currentKey].paid || 0;
 
 function renderCalendar(){
   const cal=document.getElementById("calendar");
@@ -308,13 +336,27 @@ function confirmManual(){
    CALCUL
 ======================= */
 function recalc(){
-  let total=Object.values(DATA[currentKey].days).reduce((a,b)=>a+b,0);
-  const paid=parseFloat(DATA[currentKey].paid)||0;
-  const carry=Math.max(0,total-paid);
-  DATA[currentKey].carry=carry;
-  document.getElementById("totalMonth").textContent=total.toFixed(2);
-  document.getElementById("carryOver").textContent=carry.toFixed(2);
-  calcEuro(total);
+  const close = DATA[currentKey].closing || 31;
+  const prevCarry = getPreviousCarry(currentKey);
+
+  let inPeriod = 0;
+  let outPeriod = 0;
+
+  Object.entries(DATA[currentKey].days).forEach(([d,h])=>{
+    if(parseInt(d) <= close) inPeriod += h;
+    else outPeriod += h;
+  });
+
+  const paid = parseFloat(DATA[currentKey].paid) || 0;
+  const carry = Math.max(0, inPeriod + prevCarry - paid) + outPeriod;
+
+  DATA[currentKey].carry = carry;
+
+  document.getElementById("prevCarry").textContent = prevCarry.toFixed(2);
+  document.getElementById("totalMonth").textContent = inPeriod.toFixed(2);
+  document.getElementById("carryOver").textContent = carry.toFixed(2);
+
+  calcEuro(inPeriod);
   save();
 }
 
@@ -352,7 +394,17 @@ function exportJSON(){
   a.click();
   document.getElementById("fileDate").textContent=new Date().toLocaleDateString();
 }
+lockBtn.onclick = ()=>{
+  DATA[currentKey].locked = !DATA[currentKey].locked;
+  save();
+  updateLockUI();
+};
 
+function updateLockUI(){
+  lockBtn.textContent = DATA[currentKey].locked
+    ? "🔒 Mois verrouillé"
+    : "🔓 Mois modifiable";
+}
 /* =======================
    PARAMS €
 ======================= */
@@ -369,6 +421,30 @@ function exportJSON(){
 }
 function closeTutorial(){
   document.getElementById("tutorialModal").style.display = "none";
+}
+function exportMonthlyPDF(){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  pdf.text("Récapitulatif mensuel – Heures supplémentaires",10,15);
+  pdf.text("Mois : "+currentKey,10,25);
+  pdf.text("Total période : "+totalMonth.textContent+" h",10,35);
+  pdf.text("Report : "+carryOver.textContent+" h",10,45);
+  pdf.save("heures_mensuelles_"+currentKey+".pdf");
+}
+
+function exportAnnualPDF(){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  let y=15;
+  pdf.text("Bilan annuel – Heures supplémentaires",10,y); y+=10;
+
+  Object.keys(DATA).sort().forEach(k=>{
+    pdf.text(k+" → "+(DATA[k].carry||0)+" h",10,y);
+    y+=6;
+    if(y>270){pdf.addPage();y=15;}
+  });
+
+  pdf.save("heures_annuelles.pdf");
 }
 </script>
 <div class="card" style="font-size:13px;color:#aaa">
