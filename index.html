@@ -206,6 +206,7 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
     <label>Saisie manuelle</label>
     <input type="number" id="manualHours" step="0.25">
     <button onclick="confirmManual()">Valider</button>
+    <button class="danger" onclick="deleteDayHours()">🗑️ Supprimer les heures du jour</button>
     <button class="secondary" onclick="closeHours()">Annuler</button>
   </div>
 </div>
@@ -240,7 +241,7 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
     <button class="secondary" onclick="closeTutorial()">Fermer</button>
   </div>
 </div>
-<button class="danger" onclick="deleteDayHours()">🗑️ Supprimer les heures du jour</button>
+
 <script>
 
 /* =======================
