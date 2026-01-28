@@ -235,17 +235,13 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
 let DATA = JSON.parse(localStorage.getItem("HS_DATA")||"{}");
 let SETTINGS = JSON.parse(localStorage.getItem("HS_SETTINGS")||"{}");
 let currentKey="", currentDay=null, unlocked=false;
-paidHours.oninput = ()=>{
-  DATA[currentKey].paid = parseFloat(paidHours.value) || 0;
-  save();
-  recalc();
-};
+
 /* =======================
    INIT
 ======================= */
 const monthPicker = document.getElementById("monthPicker");
 monthPicker.value = new Date().toISOString().slice(0,7);
-loadMonth();
+
 
 /* =======================
    CALENDRIER
@@ -282,9 +278,14 @@ closingDay.onchange = ()=>{
   save();
   recalc();
 };
-const closingDay = document.getElementById("closingDay");
 const lockBtn = document.getElementById("lockBtn");
+const paidHours = document.getElementById("paidHours");
 
+paidHours.oninput = ()=>{
+  DATA[currentKey].paid = parseFloat(paidHours.value) || 0;
+  save();
+  recalc();
+};
 function renderCalendar(){
   const cal=document.getElementById("calendar");
   cal.innerHTML="";
@@ -293,7 +294,13 @@ function renderCalendar(){
   for(let d=1;d<=days;d++){
     const div=document.createElement("div");
     div.className="day";
-    if(d===new Date().getDate())div.classList.add("today");
+    const today = new Date();
+if(
+  d === today.getDate() &&
+  currentKey === today.toISOString().slice(0,7)
+){
+  div.classList.add("today");
+}
     if(DATA[currentKey].locked)div.classList.add("locked");
     div.innerHTML=`<b>${d}</b><br>${DATA[currentKey].days[d]||""}`;
     div.onclick=()=>{
@@ -378,8 +385,7 @@ function unlockEuro(){
   if(document.getElementById("unlockCode").value==="1234"){
     unlocked=true;
     document.getElementById("euroBox").classList.remove("blur");
-    calcEuro(Object.values(DATA[currentKey].days).reduce((a,b)=>a+b,0));
-  }
+    calcEuro(parseFloat(document.getElementById("totalMonth").textContent) || 0);
 }
 
 /* =======================
@@ -448,6 +454,7 @@ function exportAnnualPDF(){
 
   pdf.save("heures_annuelles.pdf");
 }
+loadMonth();
 </script>
 <div class="card" style="font-size:13px;color:#aaa">
   <h3>📘 Notice utilisateur</h3>
