@@ -537,6 +537,7 @@ function toggleChangeCode(){
 ======================= */
 function save(){
   const year = getYearFromMonth(currentKey);
+  recalcCascade(currentKey); // ✅ recalcul global
   saveYearData(year, DATA);
   autoBackup(year);
 }
@@ -688,6 +689,39 @@ function saveYearData(year, data){
     kData(year),
     JSON.stringify(data)
   );
+}
+function recalcCascade(fromKey){
+  const year = getYearFromMonth(fromKey);
+  const months = Object.keys(DATA)
+    .filter(k => k.startsWith(year))
+    .sort(); // ordre chrono YYYY-MM
+
+  const startIndex = months.indexOf(fromKey);
+  if(startIndex === -1) return;
+
+  for(let i = startIndex; i < months.length; i++){
+    const key = months[i];
+    const month = DATA[key];
+
+    const prevCarry = (i === 0)
+      ? 0
+      : DATA[months[i - 1]].carry || 0;
+
+    let inPeriod = 0;
+    let outPeriod = 0;
+
+    Object.entries(month.days || {}).forEach(([d,h])=>{
+      if(parseInt(d) <= month.closing) inPeriod += h;
+      else outPeriod += h;
+    });
+
+    const paid = parseFloat(month.paid) || 0;
+
+    const carry = Math.max(0, inPeriod + prevCarry - paid) + outPeriod;
+    month.carry = carry;
+  }
+
+  saveYearData(year, DATA);
 }
 function importJSONFile(e){
   const file = e.target.files[0];
