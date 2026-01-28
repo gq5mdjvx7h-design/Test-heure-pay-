@@ -501,6 +501,7 @@ if(Object.keys(DATA).length === 0){
     "⚠️ Données vides détectées.\n" +
     "Vérifie tes sauvegardes JSON."
   );
+}
 lockBtn.onclick = ()=>{
   DATA[currentKey].locked = !DATA[currentKey].locked;
   save();
