@@ -448,7 +448,13 @@ function recalc(){
     else outPeriod += h;
   });
 
-  const prevCarry = getPreviousCarry(currentKey);
+  const year = getYearFromMonth(currentKey);
+const months = Object.keys(DATA)
+  .filter(k => k.startsWith(year))
+  .sort();
+
+const idx = months.indexOf(currentKey);
+const prevCarry = idx > 0 ? (DATA[months[idx - 1]].carry || 0) : 0;
   const carry = DATA[currentKey].carry || 0;
   const paid = parseFloat(DATA[currentKey].paid) || 0;
 
