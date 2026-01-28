@@ -228,18 +228,18 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
   </div>
 </div>
 <script>
-paidHours.oninput = ()=>{
-  DATA[currentKey].paid = parseFloat(paidHours.value) || 0;
-  save();
-  recalc();
-};
+
 /* =======================
    DONNÉES
 ======================= */
 let DATA = JSON.parse(localStorage.getItem("HS_DATA")||"{}");
 let SETTINGS = JSON.parse(localStorage.getItem("HS_SETTINGS")||"{}");
 let currentKey="", currentDay=null, unlocked=false;
-
+paidHours.oninput = ()=>{
+  DATA[currentKey].paid = parseFloat(paidHours.value) || 0;
+  save();
+  recalc();
+};
 /* =======================
    INIT
 ======================= */
@@ -250,14 +250,7 @@ loadMonth();
 /* =======================
    CALENDRIER
 ======================= */
-function loadMonth(){
-  currentKey = monthPicker.value;
-  if(!DATA[currentKey]){
-  DATA[currentKey]={days:{},paid:0,carry:0,closing:31,locked:false};
-}
-closingDay.value = DATA[currentKey].closing || 31;
-  renderCalendar();
-  function getPreviousCarry(key){
+function getPreviousCarry(key){
   const [y,m] = key.split("-").map(Number);
   let d = new Date(y, m-1, 1);
 
@@ -269,19 +262,28 @@ closingDay.value = DATA[currentKey].closing || 31;
   }
   return 0;
 }
-  recalc();
+function loadMonth(){
+  currentKey = monthPicker.value;
+  if(!DATA[currentKey]){
+  DATA[currentKey]={days:{},paid:0,carry:0,closing:31,locked:false};
 }
-monthPicker.onchange=loadMonth;
-const closingDayInput = document.getElementById("closingDay");
-closingDayInput.onchange = ()=>{
-  DATA[currentKey].closing = parseInt(closingDayInput.value) || 31;
-  save();
+closingDay.value = DATA[currentKey].closing || 31;
+  renderCalendar();
   recalc();
-};
-const prev = getPreviousCarry(currentKey);
+  const prev = getPreviousCarry(currentKey);
 document.getElementById("prevCarry").textContent = prev.toFixed(2);
 updateLockUI();
 paidHours.value = DATA[currentKey].paid || 0;
+}
+monthPicker.onchange=loadMonth;
+const closingDay = document.getElementById("closingDay");
+closingDay.onchange = ()=>{
+  DATA[currentKey].closing = parseInt(closingDay.value) || 31;
+  save();
+  recalc();
+};
+const closingDay = document.getElementById("closingDay");
+const lockBtn = document.getElementById("lockBtn");
 
 function renderCalendar(){
   const cal=document.getElementById("calendar");
