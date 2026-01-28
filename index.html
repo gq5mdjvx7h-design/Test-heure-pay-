@@ -303,18 +303,21 @@ paidHours.oninput = ()=>{
 };
 
 function renderCalendar(){
-  const cal=document.getElementById("calendar");
-  cal.innerHTML="";
-  const [y,m]=currentKey.split("-").map(Number);
-  const days=new Date(y,m,0).getDate();
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+  const [y,m] = currentKey.split("-").map(Number);
+  const days = new Date(y,m,0).getDate();
 
-  for(let d=1;d<=days;d++){
-    const div=document.createElement("div");
-    div.className="day";
-if(d > DATA[currentKey].closing){
-  div.classList.add("locked");
-  div.onclick = null;
-}
+  for(let d=1; d<=days; d++){
+    const div = document.createElement("div");
+    div.className = "day";
+
+    const isAfterClosing = d > DATA[currentKey].closing;
+    const isMonthLocked = DATA[currentKey].locked;
+
+    if(isAfterClosing || isMonthLocked){
+      div.classList.add("locked");
+    }
 
     const today = new Date();
     if(
@@ -324,15 +327,12 @@ if(d > DATA[currentKey].closing){
       div.classList.add("today");
     }
 
-    if(DATA[currentKey].locked)div.classList.add("locked");
-
     const val = DATA[currentKey].days[d];
     div.innerHTML = `<b>${d}</b><br>${val ? val.toFixed(2)+" h" : ""}`;
 
-    div.onclick=()=>{
-      if(DATA[currentKey].locked)return alert("Mois verrouillé");
-      openHours(d);
-    };
+    if(!isAfterClosing && !isMonthLocked){
+      div.onclick = () => openHours(d);
+    }
 
     cal.appendChild(div);
   }
@@ -501,10 +501,6 @@ if(Object.keys(DATA).length === 0){
     "⚠️ Données vides détectées.\n" +
     "Vérifie tes sauvegardes JSON."
   );
-}heures_sup.json";
-  a.click();
-  document.getElementById("fileDate").textContent=new Date().toLocaleDateString();
-}
 lockBtn.onclick = ()=>{
   DATA[currentKey].locked = !DATA[currentKey].locked;
   save();
@@ -579,22 +575,7 @@ function exportAnnualPDF(){
 }
 
 loadMonth();
-async function sha256(str){
-  const buf = new TextEncoder().encode(str);
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2,"0"))
-    .join("");
-}
 
-async function getSecureCode(){
-  let h = localStorage.getItem("HS_CODE_HASH");
-  if(!h){
-    h = await sha256("1234");
-    localStorage.setItem("HS_CODE_HASH", h);
-  }
-  return h;
-}
 function autoBackup(){
   const stamp = new Date().toISOString().slice(0,10);
   localStorage.setItem(
