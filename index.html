@@ -186,6 +186,10 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
   <span class="badge ok">🟢 Sauvegarde locale auto</span>
   <span class="badge file">💾 Dernier fichier : <span id="fileDate">—</span></span>
   <button onclick="exportJSON()">💾 Sauvegarde dans un fichier</button>
+  <input type="file" id="importFile" accept=".json" style="display:none">
+<button class="secondary" onclick="document.getElementById('importFile').click()">
+📥 Importer une sauvegarde
+</button>
    <button onclick="exportMonthlyPDF()">📄 PDF mensuel détaillé</button>
 <button onclick="exportAnnualPDF()">📕 PDF annuel récapitulatif</button>
 </div>
@@ -527,10 +531,7 @@ async function changeCode(){
 
   document.getElementById("changeCodeBox").style.display="none";
 }
-    "⚠️ Données vides détectées.\n" +
-    "Vérifie tes sauvegardes JSON."
-  );
-}
+
 lockBtn.onclick = ()=>{
   DATA[currentKey].locked = !DATA[currentKey].locked;
   save();
@@ -640,6 +641,65 @@ function saveYearData(year, data){
     JSON.stringify(data)
   );
 }
+function importJSONFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    let payload;
+
+    try{
+      payload = JSON.parse(reader.result);
+    } catch(err){
+      alert("❌ Fichier invalide");
+      return;
+    }
+
+    // 🔒 Vérifications minimales
+    if(!payload.DATA || !payload.year){
+      alert("❌ Format non reconnu");
+      return;
+    }
+
+    const year = payload.year;
+    registerYear(year);
+
+    const existing = loadYearData(year);
+
+    let added = 0;
+    let skipped = 0;
+
+    Object.keys(payload.DATA).forEach(monthKey=>{
+      if(!existing[monthKey]){
+        existing[monthKey] = payload.DATA[monthKey];
+        added++;
+      } else {
+        skipped++;
+      }
+    });
+
+    saveYearData(year, existing);
+
+    alert(
+      `✅ Import terminé\n\n` +
+      `Année : ${year}\n` +
+      `Mois ajoutés : ${added}\n` +
+      `Mois ignorés : ${skipped}`
+    );
+
+    // Recharge si on est sur la même année
+    if(getYearFromMonth(currentKey) === String(year)){
+      DATA = loadYearData(year);
+      loadMonth();
+    }
+  };
+
+  reader.readAsText(file);
+  e.target.value = ""; // reset input
+}
+document.getElementById("importFile").addEventListener("change", importJSONFile);
 </script>
 <div class="card" style="font-size:13px;color:#aaa">
   <h3>📘 Notice utilisateur</h3>
