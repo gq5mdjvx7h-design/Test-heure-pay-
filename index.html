@@ -281,7 +281,15 @@ paidHours.value = DATA[currentKey].paid || 0;
 monthPicker.onchange=loadMonth;
 const closingDay = document.getElementById("closingDay");
 closingDay.onchange = ()=>{
-  DATA[currentKey].closing = parseInt(closingDay.value) || 31;
+  const [y,m] = currentKey.split("-").map(Number);
+  const maxDay = new Date(y, m, 0).getDate();
+
+  let val = parseInt(closingDay.value) || maxDay;
+  val = Math.min(Math.max(1, val), maxDay);
+
+  DATA[currentKey].closing = val;
+  closingDay.value = val;
+
   save();
   recalc();
 };
@@ -318,7 +326,9 @@ div.innerHTML = `<b>${d}</b><br>${val ? val.toFixed(2)+" h" : ""}`;
     cal.appendChild(div);
   }
 }
-
+if(d > DATA[currentKey].closing){
+  div.style.opacity = "0.5";
+}
 /* =======================
    POPUP HEURES
 ======================= */
@@ -338,7 +348,11 @@ function closeHours(){
   document.getElementById("hoursModal").style.display="none";
 }
 function applyHours(h){
-  DATA[currentKey].days[currentDay]=h;
+  if(h <= 0) return;
+
+  DATA[currentKey].days[currentDay] =
+    (DATA[currentKey].days[currentDay] || 0) + h;
+
   save();
   recalc();
   closeHours();
@@ -373,7 +387,9 @@ function recalc(){
   document.getElementById("totalMonth").textContent = inPeriod.toFixed(2);
   document.getElementById("carryOver").textContent = carry.toFixed(2);
 
-  calcEuro(inPeriod);
+    if(unlocked){
+    calcEuro(inPeriod);
+  }
   save();
 }
 
@@ -419,10 +435,9 @@ function changeCode(){
   const newC = document.getElementById("newCode").value;
   const confC = document.getElementById("confirmCode").value;
 
-  if(oldC !== getSecureCode()){
-    alert("❌ Ancien code incorrect");
-    return;
-  }
+  function getSecureCode(){
+  return (localStorage.getItem("HS_CODE") || "").toString();
+}
   if(newC.length < 4){
     alert("⚠️ Le code doit contenir au moins 4 caractères");
     return;
