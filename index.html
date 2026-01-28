@@ -174,7 +174,14 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
   <input type="password" id="unlockCode" placeholder="Code (1234)">
   <button onclick="unlockEuro()">Déverrouiller</button>
 </div>
+<button class="secondary" onclick="toggleChangeCode()">🔁 Changer le code</button>
 
+<div id="changeCodeBox" style="display:none;margin-top:10px">
+  <input type="password" id="oldCode" placeholder="Ancien code">
+  <input type="password" id="newCode" placeholder="Nouveau code (4 chiffres min)">
+  <input type="password" id="confirmCode" placeholder="Confirmer le code">
+  <button class="danger" onclick="changeCode()">Valider le nouveau code</button>
+</div>
 <div class="card">
   <span class="badge ok">🟢 Sauvegarde locale auto</span>
   <span class="badge file">💾 Dernier fichier : <span id="fileDate">—</span></span>
@@ -302,7 +309,8 @@ if(
   div.classList.add("today");
 }
     if(DATA[currentKey].locked)div.classList.add("locked");
-    div.innerHTML=`<b>${d}</b><br>${DATA[currentKey].days[d]||""}`;
+    const val = DATA[currentKey].days[d];
+div.innerHTML = `<b>${d}</b><br>${val ? val.toFixed(2)+" h" : ""}`;
     div.onclick=()=>{
       if(DATA[currentKey].locked)return alert("Mois verrouillé");
       openHours(d);
@@ -374,7 +382,12 @@ function recalc(){
 ======================= */
 function calcEuro(h){
   if(!unlocked)return;
-  const s=SETTINGS;
+  const s = {
+  rate: SETTINGS.rate || 20,
+  coef25: SETTINGS.coef25 || 1.25,
+  coef50: SETTINGS.coef50 || 1.5,
+  coefNet: SETTINGS.coefNet || 0.93
+};
   const h25=Math.min(h,8);
   const h50=Math.max(0,h-8);
   const brut=(h25*s.rate*s.coef25)+(h50*s.rate*s.coef50);
@@ -382,11 +395,52 @@ function calcEuro(h){
   document.getElementById("euroResult").textContent=net.toFixed(2)+" €";
 }
 function unlockEuro(){
-  if(document.getElementById("unlockCode").value==="1234"){
-    unlocked=true;
+  const input = document.getElementById("unlockCode").value;
+  if(input === getSecureCode()){
+    unlocked = true;
     document.getElementById("euroBox").classList.remove("blur");
+    document.getElementById("unlockCode").value = "";
     calcEuro(parseFloat(document.getElementById("totalMonth").textContent) || 0);
+  } else {
+    alert("❌ Code incorrect");
+  }
 }
+function toggleChangeCode(){
+  if(!unlocked){
+    alert("🔒 Déverrouille d’abord la zone €");
+    return;
+  }
+  const box = document.getElementById("changeCodeBox");
+  box.style.display = box.style.display === "none" ? "block" : "none";
+}
+
+function changeCode(){
+  const oldC = document.getElementById("oldCode").value;
+  const newC = document.getElementById("newCode").value;
+  const confC = document.getElementById("confirmCode").value;
+
+  if(oldC !== getSecureCode()){
+    alert("❌ Ancien code incorrect");
+    return;
+  }
+  if(newC.length < 4){
+    alert("⚠️ Le code doit contenir au moins 4 caractères");
+    return;
+  }
+  if(newC !== confC){
+    alert("❌ Confirmation différente");
+    return;
+  }
+
+  localStorage.setItem("HS_CODE", newC);
+  alert("✅ Code modifié avec succès");
+
+  document.getElementById("changeCodeBox").style.display = "none";
+  document.getElementById("oldCode").value = "";
+  document.getElementById("newCode").value = "";
+  document.getElementById("confirmCode").value = "";
+}
+
 
 /* =======================
    SAUVEGARDE
@@ -454,7 +508,12 @@ function exportAnnualPDF(){
 
   pdf.save("heures_annuelles.pdf");
 }
+function getSecureCode(){
+  return localStorage.getItem("HS_CODE") || "1234";
+}
 loadMonth();
+
+
 </script>
 <div class="card" style="font-size:13px;color:#aaa">
   <h3>📘 Notice utilisateur</h3>
