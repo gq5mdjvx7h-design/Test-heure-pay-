@@ -151,7 +151,9 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
 <div class="card">
   <h3>Récapitulatif</h3>
   <p>Report précédent : <b id="prevCarry">0.00</b> h</p>
-  <p>Total mois : <b id="totalMonth">0.00</b> h</p>
+<p>Total mois : <b id="totalMonth">0.00</b> h</p>
+<p>Heures à 25 % : <b id="hours25">0.00</b> h</p>
+<p>Heures à 50 % : <b id="hours50">0.00</b> h</p>c
   <p>Heures payées : <input type="number" id="paidHours" step="0.25"></p>
   <p>Reliquat reporté : <b id="carryOver">0.00</b> h</p>
 
@@ -437,7 +439,11 @@ function recalc(){
 
     
   const payable = Math.max(0, inPeriod + prevCarry - paid);
+const h25 = Math.min(8, payable);
+const h50 = Math.max(0, payable - 8);
 
+document.getElementById("hours25").textContent = h25.toFixed(2);
+document.getElementById("hours50").textContent = h50.toFixed(2);
 if(unlocked){
   calcEuro(payable);
 }
@@ -448,18 +454,19 @@ save();
    € CALCUL
 ======================= */
 function calcEuro(h){
-  if(!unlocked)return;
-  const s = {
-  rate: SETTINGS.rate || 20,
-  coef25: SETTINGS.coef25 || 1.25,
-  coef50: SETTINGS.coef50 || 1.5,
-  coefNet: SETTINGS.coefNet || 0.93
-};
-  const h25=Math.min(h,8);
-  const h50=Math.max(0,h-8);
-  const brut=(h25*s.rate*s.coef25)+(h50*s.rate*s.coef50);
-  const net=brut*s.coefNet;
-  document.getElementById("euroResult").textContent=net.toFixed(2)+" €";
+  if(!unlocked) return;
+
+  const h25 = Math.min(8, h);
+  const h50 = Math.max(0, h - 8);
+
+  const brut =
+    (h25 * SETTINGS.rate * SETTINGS.coef25) +
+    (h50 * SETTINGS.rate * SETTINGS.coef50);
+
+  const net = brut * SETTINGS.coefNet;
+
+  document.getElementById("euroResult").textContent =
+    net.toFixed(2) + " €";
 }
 async function sha256(str){
   const buf = new TextEncoder().encode(str);
