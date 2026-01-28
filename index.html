@@ -398,10 +398,13 @@ function recalc(){
   document.getElementById("totalMonth").textContent = inPeriod.toFixed(2);
   document.getElementById("carryOver").textContent = carry.toFixed(2);
 
-    if(unlocked){
-    calcEuro(inPeriod);
-  }
-  save();
+    
+  const payable = Math.max(0, inPeriod + prevCarry - paid);
+
+if(unlocked){
+  calcEuro(payable);
+}
+save();
 }
 
 /* =======================
@@ -421,13 +424,15 @@ function calcEuro(h){
   const net=brut*s.coefNet;
   document.getElementById("euroResult").textContent=net.toFixed(2)+" €";
 }
-function unlockEuro(){
+async function unlockEuro(){
   const input = document.getElementById("unlockCode").value;
-  if(input === getSecureCode()){
+  const inputHash = await sha256(input);
+
+  if(inputHash === await getSecureCode()){
     unlocked = true;
     document.getElementById("euroBox").classList.remove("blur");
     document.getElementById("unlockCode").value = "";
-    calcEuro(parseFloat(document.getElementById("totalMonth").textContent) || 0);
+    recalc();
   } else {
     alert("❌ Code incorrect");
   }
@@ -441,18 +446,27 @@ function toggleChangeCode(){
   box.style.display = box.style.display === "none" ? "block" : "none";
 }
 
-function changeCode(){
+
+
+/* =======================
+   SAUVEGARDE
+======================= */
+function save(){
+  localStorage.setItem("HS_DATA",JSON.stringify(DATA));
+  autoBackup();
+}
+async function changeCode(){
   const oldC = document.getElementById("oldCode").value;
   const newC = document.getElementById("newCode").value;
   const confC = document.getElementById("confirmCode").value;
 
-  if(oldC !== getSecureCode()){
+  if(await sha256(oldC) !== await getSecureCode()){
     alert("❌ Ancien code incorrect");
     return;
   }
 
   if(newC.length < 4){
-    alert("⚠️ Le code doit contenir au moins 4 caractères");
+    alert("⚠️ 4 caractères minimum");
     return;
   }
 
@@ -461,27 +475,17 @@ function changeCode(){
     return;
   }
 
-  localStorage.setItem("HS_CODE", newC);
-  alert("✅ Code modifié avec succès");
+  localStorage.setItem("HS_CODE_HASH", await sha256(newC));
+  alert("✅ Code modifié");
 
-  document.getElementById("changeCodeBox").style.display = "none";
-  document.getElementById("oldCode").value = "";
-  document.getElementById("newCode").value = "";
-  document.getElementById("confirmCode").value = "";
+  document.getElementById("changeCodeBox").style.display="none";
 }
-
-
-/* =======================
-   SAUVEGARDE
-======================= */
-function save(){
-  localStorage.setItem("HS_DATA",JSON.stringify(DATA));
-}
-function exportJSON(){
-  const blob=new Blob([JSON.stringify({DATA,SETTINGS},null,2)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="heures_sup.json";
+if(Object.keys(DATA).length === 0){
+  alert(
+    "⚠️ Données vides détectées.\n" +
+    "Vérifie tes sauvegardes JSON."
+  );
+}heures_sup.json";
   a.click();
   document.getElementById("fileDate").textContent=new Date().toLocaleDateString();
 }
@@ -490,7 +494,26 @@ lockBtn.onclick = ()=>{
   save();
   updateLockUI();
 };
+function exportJSON(){
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    version: "1.1",
+    DATA,
+    SETTINGS
+  };
 
+  const blob = new Blob(
+    [JSON.stringify(payload,null,2)],
+    {type:"application/json"}
+  );
+
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="heures_sup_backup_"+Date.now()+".json";
+  a.click();
+
+  fileDate.textContent = new Date().toLocaleDateString();
+}
 function updateLockUI(){
   lockBtn.textContent = DATA[currentKey].locked
     ? "🔒 Mois verrouillé"
@@ -541,8 +564,29 @@ function getSecureCode(){
   return localStorage.getItem("HS_CODE") || "1234";
 }
 loadMonth();
+async function sha256(str){
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2,"0"))
+    .join("");
+}
 
-
+async function getSecureCode(){
+  let h = localStorage.getItem("HS_CODE_HASH");
+  if(!h){
+    h = await sha256("1234");
+    localStorage.setItem("HS_CODE_HASH", h);
+  }
+  return h;
+}
+function autoBackup(){
+  const stamp = new Date().toISOString().slice(0,10);
+  localStorage.setItem(
+    "HS_BACKUP_"+stamp,
+    JSON.stringify({DATA,SETTINGS})
+  );
+}
 </script>
 <div class="card" style="font-size:13px;color:#aaa">
   <h3>📘 Notice utilisateur</h3>
