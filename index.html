@@ -240,18 +240,6 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
    DONNÉES
 ======================= */
 const STORAGE_PREFIX = "CA_HS_TRACKER_V1";
-let DATA = {};
-let SETTINGS = JSON.parse(
-  localStorage.getItem(kSettings()) || "{}"
-);
-let currentKey="", currentDay=null, unlocked=false;
-
-/* =======================
-   INIT
-======================= */
-const monthPicker = document.getElementById("monthPicker");
-monthPicker.value = new Date().toISOString().slice(0,7);
-
 function kData(year){
   return `${STORAGE_PREFIX}_DATA_${year}`;
 }
@@ -270,6 +258,19 @@ function kBackup(year, date){
 function getYearFromMonth(key){
   return key.split("-")[0];
 }
+let DATA = {};
+let SETTINGS = JSON.parse(
+  localStorage.getItem(kSettings()) || "{}"
+);
+let currentKey="", currentDay=null, unlocked=false;
+
+/* =======================
+   INIT
+======================= */
+const monthPicker = document.getElementById("monthPicker");
+monthPicker.value = new Date().toISOString().slice(0,7);
+
+
 /* =======================
    CALENDRIER
 ======================= */
@@ -290,6 +291,15 @@ function loadMonth(){
 const year = getYearFromMonth(currentKey);
 registerYear(year);
 DATA = loadYearData(year);
+if(!DATA[currentKey]){
+  DATA[currentKey] = {
+    days: {},
+    paid: 0,
+    carry: 0,
+    closing: 31,
+    locked: false
+  };
+}
 closingDay.value = DATA[currentKey].closing || 31;
   renderCalendar();
   recalc();
@@ -512,13 +522,11 @@ async function changeCode(){
     return;
   }
 
-  localStorage.setItem("HS_CODE_HASH", await sha256(newC));
+  localStorage.setItem(kCode(), await sha256(newC));
   alert("✅ Code modifié");
 
   document.getElementById("changeCodeBox").style.display="none";
 }
-if(Object.keys(DATA).length === 0){
-  alert(
     "⚠️ Données vides détectées.\n" +
     "Vérifie tes sauvegardes JSON."
   );
@@ -564,8 +572,10 @@ function updateLockUI(){
   document.getElementById(id).value=SETTINGS[id]|| (id==="coefNet"?0.93:(id==="rate"?20:1.25));
   document.getElementById(id).onchange=()=>{
     SETTINGS[id]=parseFloat(document.getElementById(id).value)||0;
-    localStorage.getItem(kSettings())
-localStorage.setItem(kSettings(), JSON.stringify(SETTINGS))
+    localStorage.setItem(
+  kSettings(),
+  JSON.stringify(SETTINGS)
+);
     recalc();
   };
 });
