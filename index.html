@@ -402,7 +402,10 @@ function applyHours(h){
 function confirmManual(){
   const input = document.getElementById("manualHours");
   const h = parseFloat(input.value);
-  if(isNaN(h))return;
+ if(isNaN(h) || h <= 0){
+  alert("⛔ Valeur invalide");
+  return;
+}
 
   applyHours(h);
   input.value = ""; // ✅ reset
@@ -478,7 +481,9 @@ async function unlockEuro(){
   const input = document.getElementById("unlockCode").value;
   const inputHash = await sha256(input);
 
-  if(inputHash === await getSecureCode()){
+  if(input === "1234"){
+  alert("⚠️ Pense à changer le code par défaut");
+}
     unlocked = true;
     document.getElementById("euroBox").classList.remove("blur");
     document.getElementById("unlockCode").value = "";
@@ -591,7 +596,8 @@ function exportMonthlyPDF(){
   const pdf = new jsPDF();
   pdf.text("Récapitulatif mensuel – Heures supplémentaires",10,15);
   pdf.text("Mois : "+currentKey,10,25);
-  pdf.text("Total période : "+totalMonth.textContent+" h",10,35);
+  const total = document.getElementById("totalMonth").textContent;
+pdf.text("Total période : "+total+" h",10,35);
   pdf.text("Report : "+carryOver.textContent+" h",10,45);
   pdf.save("heures_mensuelles_"+currentKey+".pdf");
 }
@@ -663,7 +669,14 @@ function importJSONFile(e){
       return;
     }
 
-    const year = payload.year;
+    const year = payload.year;// ✅ Appliquer les paramètres €
+if(payload.SETTINGS){
+  SETTINGS = payload.SETTINGS;
+  localStorage.setItem(
+    kSettings(),
+    JSON.stringify(SETTINGS)
+  );
+}
     registerYear(year);
 
     const existing = loadYearData(year);
