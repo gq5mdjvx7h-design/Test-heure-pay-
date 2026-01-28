@@ -366,9 +366,12 @@ function applyHours(h){
   closeHours();
 }
 function confirmManual(){
-  const h=parseFloat(document.getElementById("manualHours").value);
+  const input = document.getElementById("manualHours");
+  const h = parseFloat(input.value);
   if(isNaN(h))return;
+
   applyHours(h);
+  input.value = ""; // ✅ reset
 }
 
 /* =======================
