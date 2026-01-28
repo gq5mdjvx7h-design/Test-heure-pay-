@@ -481,13 +481,16 @@ async function unlockEuro(){
   const input = document.getElementById("unlockCode").value;
   const inputHash = await sha256(input);
 
-  if(input === "1234"){
-  alert("⚠️ Pense à changer le code par défaut");
-}
+  if(inputHash === await getSecureCode()){
     unlocked = true;
     document.getElementById("euroBox").classList.remove("blur");
     document.getElementById("unlockCode").value = "";
     recalc();
+
+    if(input === "1234"){
+      alert("⚠️ Pense à changer le code par défaut");
+    }
+
   } else {
     alert("❌ Code incorrect");
   }
