@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Compteur Heures Sup – V4 Paie Mensuelle</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+/* =========================
+   MODE SOMBRE – PRO
+========================= */
+:root{
+  --bg:#0f1115;
+  --card:#1c1f26;
+  --text:#e6e6e6;
+  --muted:#9aa0a6;
+  --accent:#4f8cff;
+  --danger:#c0392b;
+  --success:#2ecc71;
+  --warning:#f39c12;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;
+  margin:0;
+  padding:15px;
+}
+
+h1,h2{text-align:center}
+
+.card{
+  background:var(--card);
+  padding:15px;
+  border-radius:12px;
+  margin:15px auto;
+  max-width:900px;
+}
+
+button,input,select{
+  background:#262a33;
+  color:var(--text);
+  border:1px solid #333;
+  border-radius:8px;
+  padding:8px;
+}
+
+button{
+  background:var(--accent);
+  border:none;
+  cursor:pointer;
+}
+
+button.danger{background:var(--danger)}
+button.secondary{background:#2a2f3a}
+
+.badge{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:20px;
+  font-size:12px;
+  margin-right:6px;
+}
+
+.badge.success{background:#1e4620;color:#7dff9e}
+.badge.info{background:#1e3a5f;color:#9fd0ff}
+
+.calendar{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:6px;
+}
+
+.weekday{
+  text-align:center;
+  font-weight:bold;
+  font-size:12px;
+  color:var(--muted);
+}
+
+.day{
+  background:#262a33;
+  border-radius:8px;
+  padding:6px;
+  text-align:center;
+  cursor:pointer;
+  min-height:70px;
+  position:relative;
+}
+
+.day.today{
+  outline:3px solid var(--warning);
+}
+
+.day.locked{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
+.day .h{
+  font-weight:bold;
+  margin-top:4px;
+}
+
+.readonly{
+  opacity:0.5;
+}
+
+.blur{
+  filter:blur(8px);
+}
+
+/* PDF */
+@media print{
+  .no-print{display:none}
+}
+</style>
+</head>
+
+<body>
+
+<h1>🧾 Heures supplémentaires – Paie mensuelle</h1>
+
+<!-- ===== PÉRIODE ACTIVE ===== -->
+<div class="card">
+  <h2>📅 Période de paie active</h2>
+  <input type="month" id="monthPicker">
+  <p id="periodInfo"></p>
+  <button onclick="toggleLock()" id="lockBtn">🔓 Mois déverrouillé</button>
+</div>
+
+<!-- ===== ALERTES ===== -->
+<div class="card" id="alertBox" style="display:none"></div>
+
+<!-- ===== CALENDRIER ===== -->
+<div class="card">
+  <div class="calendar" id="calendar"></div>
+</div>
+
+<!-- ===== RÉCAP ===== -->
+<div class="card">
+  <h2>📊 Récapitulatif</h2>
+  <p>Total heures sup : <b id="totalH">0.00 h</b></p>
+  <p>Heures payées : <input type="number" id="paid" step="0.25"></p>
+  <p>Reliquat reporté : <b id="carry">0.00 h</b></p>
+
+  <div class="blur">
+    <h3>💶 Valeur estimée</h3>
+    <p id="euros">0 €</p>
+  </div>
+</div>
+
+<!-- ===== SAUVEGARDES ===== -->
+<div class="card">
+  <span class="badge success" id="autoSaveBadge">🟢 Sauvegarde auto</span>
+  <span class="badge info" id="fileSaveBadge">💾 Aucune sauvegarde fichier</span>
+
+  <br><br>
+  <button onclick="exportJSON()">💾 Sauvegarde dans un fichier</button>
+</div>
+
+<!-- ===== CONFIG ===== -->
+<div class="card">
+  <h2>🔧 Configuration</h2>
+  <button onclick="importJSON()" class="secondary">♻️ Restaurer depuis un fichier</button>
+</div>
+
+<script>
+/* =========================
+   STOCKAGE
+========================= */
+const STORAGE_PREFIX = "PAIE_MENSUELLE_V4_";
+
+function key(month){ return STORAGE_PREFIX + month; }
+
+let data = {};
+let currentMonth = "";
+let locked = false;
+
+/* =========================
+   INIT
+========================= */
+const today = new Date();
+const monthPicker = document.getElementById("monthPicker");
+monthPicker.value = today.toISOString().slice(0,7);
+
+monthPicker.onchange = loadMonth;
+
+function loadMonth(){
+  currentMonth = monthPicker.value;
+  data = JSON.parse(localStorage.getItem(key(currentMonth))) || {
+    days:{}, paid:0, carry:0, locked:false
+  };
+  locked = data.locked;
+  document.getElementById("paid").value = data.paid;
+  updateLockUI();
+  buildCalendar();
+  calculate();
+}
+loadMonth();
+
+/* =========================
+   CALENDRIER
+========================= */
+function buildCalendar(){
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+  ["L","M","M","J","V","S","D"].forEach(d=>{
+    const w=document.createElement("div");
+    w.className="weekday";
+    w.textContent=d;
+    cal.appendChild(w);
+  });
+
+  const [y,m] = currentMonth.split("-").map(Number);
+  const days = new Date(y,m,0).getDate();
+  const first = (new Date(y,m-1,1).getDay()+6)%7;
+  for(let i=0;i<first;i++) cal.appendChild(document.createElement("div"));
+
+  for(let d=1;d<=days;d++){
+    const div=document.createElement("div");
+    div.className="day";
+    const k=d;
+    const v=data.days[k]||0;
+    div.innerHTML=`<div>${d}</div><div class="h">${v?v.toFixed(2)+"h":""}</div>`;
+    if(locked) div.classList.add("locked");
+
+    if(y===today.getFullYear() && m-1===today.getMonth() && d===today.getDate()){
+      div.classList.add("today");
+    }
+
+    div.onclick=()=>{
+      if(locked) return alert("Mois verrouillé");
+      const h=parseFloat(prompt("Heures supplémentaires (0 à 8+)")||0);
+      if(isNaN(h))return;
+      data.days[k]=h;
+      save();
+      buildCalendar();
+      calculate();
+    };
+    cal.appendChild(div);
+  }
+}
+
+/* =========================
+   CALCUL
+========================= */
+function calculate(){
+  let total=0;
+  Object.values(data.days).forEach(h=>total+=h);
+
+  let h25=Math.min(total,8);
+  let h50=Math.max(0,total-8);
+
+  const carryPrev = getCarryPrev();
+  const brut = h25*1.25 + h50*1.5 + carryPrev;
+  const net = brut - (data.paid||0);
+
+  data.carry = net;
+
+  document.getElementById("totalH").textContent = total.toFixed(2)+" h";
+  document.getElementById("carry").textContent = net.toFixed(2)+" h";
+  document.getElementById("euros").textContent = (net*20).toFixed(2)+" €";
+
+  save();
+}
+
+/* =========================
+   REPORT CASCADE
+========================= */
+function getCarryPrev(){
+  const [y,m]=currentMonth.split("-").map(Number);
+  let prev=new Date(y,m-2,1);
+  while(true){
+    const k=prev.getFullYear()+"-"+String(prev.getMonth()+1).padStart(2,"0");
+    const d=JSON.parse(localStorage.getItem(key(k)));
+    if(d) return d.carry||0;
+    prev.setMonth(prev.getMonth()-1);
+    if(prev.getFullYear()<2000) break;
+  }
+  return 0;
+}
+
+/* =========================
+   VERROU
+========================= */
+function toggleLock(){
+  locked=!locked;
+  data.locked=locked;
+  save();
+  updateLockUI();
+}
+function updateLockUI(){
+  const btn=document.getElementById("lockBtn");
+  btn.textContent = locked ? "🔒 Mois verrouillé" : "🔓 Mois déverrouillé";
+  btn.style.background = locked ? "var(--danger)" : "var(--accent)";
+}
+
+/* =========================
+   SAUVEGARDES
+========================= */
+function save(){
+  localStorage.setItem(key(currentMonth),JSON.stringify(data));
+  document.getElementById("autoSaveBadge").textContent =
+    "🟢 Sauvegarde auto : " + new Date().toLocaleTimeString();
+}
+
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(localStorage,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="sauvegarde_paie.json";
+  a.click();
+  document.getElementById("fileSaveBadge").textContent =
+    "💾 Dernière sauvegarde fichier : " + new Date().toLocaleDateString();
+}
+
+function importJSON(){
+  const input=document.createElement("input");
+  input.type="file";
+  input.accept=".json";
+  input.onchange=e=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const obj=JSON.parse(r.result);
+      Object.keys(obj).forEach(k=>localStorage.setItem(k,obj[k]));
+      alert("Restauration terminée");
+      location.reload();
+    };
+    r.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+</script>
+
+</body>
+</html>
