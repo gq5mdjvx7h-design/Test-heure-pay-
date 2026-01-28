@@ -240,6 +240,7 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
     <button class="secondary" onclick="closeTutorial()">Fermer</button>
   </div>
 </div>
+<button class="danger" onclick="deleteDayHours()">🗑️ Supprimer les heures du jour</button>
 <script>
 
 /* =======================
@@ -376,6 +377,25 @@ function renderCalendar(){
 /* =======================
    POPUP HEURES
 ======================= */
+function deleteDayHours(){
+  if(DATA[currentKey].locked){
+    alert("🔒 Mois verrouillé");
+    return;
+  }
+
+  if(!currentDay || !DATA[currentKey].days[currentDay]){
+    alert("ℹ️ Aucune heure à supprimer");
+    return;
+  }
+
+  if(!confirm(`Supprimer toutes les heures du ${currentDay} ?`)) return;
+
+  delete DATA[currentKey].days[currentDay];
+
+  save();
+  recalc();
+  closeHours();
+}
 function openHours(d){
   currentDay=d;
   const c=document.getElementById("hoursChoices");
@@ -629,10 +649,23 @@ loadMonth();
 
 function autoBackup(year){
   const stamp = new Date().toISOString().slice(0,10);
+  const key = kBackup(year, stamp);
+
   localStorage.setItem(
-    kBackup(year, stamp),
+    key,
     JSON.stringify({DATA, SETTINGS})
   );
+
+  // 🧹 Nettoyage : max 30 backups par année
+  const keys = Object.keys(localStorage)
+    .filter(k => k.startsWith(`${STORAGE_PREFIX}_BACKUP_${year}_`))
+    .sort(); // ordre chrono
+
+  if(keys.length > 30){
+    keys.slice(0, keys.length - 30).forEach(k =>
+      localStorage.removeItem(k)
+    );
+  }
 }
 function registerYear(year){
   let index = JSON.parse(localStorage.getItem(kIndex()) || "[]");
