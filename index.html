@@ -239,8 +239,11 @@ style="position:fixed;top:15px;right:15px;z-index:4000;">
 /* =======================
    DONNÉES
 ======================= */
-let DATA = JSON.parse(localStorage.getItem("HS_DATA")||"{}");
-let SETTINGS = JSON.parse(localStorage.getItem("HS_SETTINGS")||"{}");
+const STORAGE_PREFIX = "CA_HS_TRACKER_V1";
+let DATA = {};
+let SETTINGS = JSON.parse(
+  localStorage.getItem(kSettings()) || "{}"
+);
 let currentKey="", currentDay=null, unlocked=false;
 
 /* =======================
@@ -249,7 +252,24 @@ let currentKey="", currentDay=null, unlocked=false;
 const monthPicker = document.getElementById("monthPicker");
 monthPicker.value = new Date().toISOString().slice(0,7);
 
-
+function kData(year){
+  return `${STORAGE_PREFIX}_DATA_${year}`;
+}
+function kSettings(){
+  return `${STORAGE_PREFIX}_SETTINGS`;
+}
+function kCode(){
+  return `${STORAGE_PREFIX}_CODE_HASH`;
+}
+function kIndex(){
+  return `${STORAGE_PREFIX}_INDEX`;
+}
+function kBackup(year, date){
+  return `${STORAGE_PREFIX}_BACKUP_${year}_${date}`;
+}
+function getYearFromMonth(key){
+  return key.split("-")[0];
+}
 /* =======================
    CALENDRIER
 ======================= */
@@ -267,9 +287,9 @@ function getPreviousCarry(key){
 }
 function loadMonth(){
   currentKey = monthPicker.value;
-  if(!DATA[currentKey]){
-  DATA[currentKey]={days:{},paid:0,carry:0,closing:31,locked:false};
-}
+const year = getYearFromMonth(currentKey);
+registerYear(year);
+DATA = loadYearData(year);
 closingDay.value = DATA[currentKey].closing || 31;
   renderCalendar();
   recalc();
@@ -433,10 +453,10 @@ async function sha256(str){
 }
 
 async function getSecureCode(){
-  let h = localStorage.getItem("HS_CODE_HASH");
+  let h = localStorage.getItem(kCode());
   if(!h){
     h = await sha256("1234");
-    localStorage.setItem("HS_CODE_HASH", h);
+    localStorage.setItem(kCode(), h);
   }
   return h;
 }
@@ -468,8 +488,9 @@ function toggleChangeCode(){
    SAUVEGARDE
 ======================= */
 function save(){
-  localStorage.setItem("HS_DATA",JSON.stringify(DATA));
-  autoBackup();
+  const year = getYearFromMonth(currentKey);
+  saveYearData(year, DATA);
+  autoBackup(year);
 }
 async function changeCode(){
   const oldC = document.getElementById("oldCode").value;
@@ -508,12 +529,15 @@ lockBtn.onclick = ()=>{
   updateLockUI();
 };
 function exportJSON(){
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    version: "1.1",
-    DATA,
-    SETTINGS
-  };
+  const year = getYearFromMonth(currentKey);
+
+const payload = {
+  exportedAt: new Date().toISOString(),
+  year,
+  version: "1.2",
+  DATA,
+  SETTINGS
+};
 
   const blob = new Blob(
     [JSON.stringify(payload,null,2)],
@@ -540,7 +564,8 @@ function updateLockUI(){
   document.getElementById(id).value=SETTINGS[id]|| (id==="coefNet"?0.93:(id==="rate"?20:1.25));
   document.getElementById(id).onchange=()=>{
     SETTINGS[id]=parseFloat(document.getElementById(id).value)||0;
-    localStorage.setItem("HS_SETTINGS",JSON.stringify(SETTINGS));
+    localStorage.getItem(kSettings())
+localStorage.setItem(kSettings(), JSON.stringify(SETTINGS))
     recalc();
   };
 });
@@ -577,11 +602,32 @@ function exportAnnualPDF(){
 
 loadMonth();
 
-function autoBackup(){
+function autoBackup(year){
   const stamp = new Date().toISOString().slice(0,10);
   localStorage.setItem(
-    "HS_BACKUP_"+stamp,
-    JSON.stringify({DATA,SETTINGS})
+    kBackup(year, stamp),
+    JSON.stringify({DATA, SETTINGS})
+  );
+}
+function registerYear(year){
+  let index = JSON.parse(localStorage.getItem(kIndex()) || "[]");
+  if(!index.includes(year)){
+    index.push(year);
+    index.sort();
+    localStorage.setItem(kIndex(), JSON.stringify(index));
+  }
+}
+
+function loadYearData(year){
+  return JSON.parse(
+    localStorage.getItem(kData(year)) || "{}"
+  );
+}
+
+function saveYearData(year, data){
+  localStorage.setItem(
+    kData(year),
+    JSON.stringify(data)
   );
 }
 </script>
