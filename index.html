@@ -157,6 +157,10 @@ input[type="number"]{
   padding-left: 0;
   padding-right: 0;
 }
+.day.after-closing{
+  border: 1px dashed #4f8cff;
+  opacity: 0.75;
+}
 </style>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -388,9 +392,15 @@ function renderCalendar(){
     const val = DATA[currentKey].days[d];
     div.innerHTML = `<b>${d}</b><br>${val ? val.toFixed(2)+" h" : ""}`;
 
-    if(!isAfterClosing && !isMonthLocked){
-      div.onclick = () => openHours(d);
-    }
+    if(isMonthLocked){
+  div.classList.add("locked");
+} else {
+  div.onclick = () => openHours(d);
+}
+
+if(isAfterClosing){
+  div.classList.add("after-closing");
+}
 
     cal.appendChild(div);
   }
