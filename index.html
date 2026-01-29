@@ -709,8 +709,11 @@ async function changeCode(){
 
 lockBtn.onclick = ()=>{
   DATA[currentKey].locked = !DATA[currentKey].locked;
-  save();
-  updateLockUI();
+
+  save();             // sauvegarde + cascade
+  updateLockUI();     // texte du bouton
+  renderCalendar();   // 🔥 MAJ VISUELLE IMMÉDIATE
+  recalc();           // 🔁 recalcul live
 };
 function exportJSON(){
   const year = getYearFromMonth(currentKey);
