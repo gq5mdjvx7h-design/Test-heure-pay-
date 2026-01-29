@@ -135,9 +135,10 @@ input,select{
 <body>
 
 <h1>⏱️ Heures supplémentaires</h1>
-<button onclick="openTutorial()"
-style="position:fixed;top:15px;right:15px;z-index:4000;">
-❓ Tutoriel
+<div class="card">
+  <button onclick="openTutorial()">❓tuto</button>
+</div>
+❓tuto
 </button>
 <div class="card">
   <label>Mois suivi</label>
@@ -407,6 +408,7 @@ function applyHours(h){
     (DATA[currentKey].days[currentDay] || 0) + h;
 
   save();
+  renderCalendar(); // ✅ AJOUT
   recalc();
   closeHours();
 }
@@ -467,17 +469,23 @@ const prevCarry = idx > 0 ? (DATA[months[idx - 1]].carry || 0) : 0;
 function calcEuro(h){
   if(!unlocked) return;
 
+  const rate = Number(SETTINGS.rate) || 0;
+  const c25  = Number(SETTINGS.coef25) || 0;
+  const c50  = Number(SETTINGS.coef50) || 0;
+  const netC = Number(SETTINGS.coefNet) || 0;
+
   const h25 = Math.min(8, h);
   const h50 = Math.max(0, h - 8);
 
   const brut =
-    (h25 * SETTINGS.rate * SETTINGS.coef25) +
-    (h50 * SETTINGS.rate * SETTINGS.coef50);
+    (h25 * rate * c25) +
+    (h50 * rate * c50);
 
-  const net = brut * SETTINGS.coefNet;
+  const net = brut * netC;
 
   document.getElementById("euroResult").textContent =
     net.toFixed(2) + " €";
+    recalc(); // force recalcul €
 }
 async function sha256(str){
   const buf = new TextEncoder().encode(str);
