@@ -440,7 +440,6 @@ function confirmManual(){
   applyHours(h);
   input.value = ""; // ✅ reset
 }
-}
 /* =======================
    CALCUL
 ======================= */
@@ -480,6 +479,7 @@ const prevCarry = idx > 0 ? (DATA[months[idx - 1]].carry || 0) : 0;
 
   if(unlocked){
   calcEuro();
+}
 }
 /* =======================
    € CALCUL
