@@ -7,6 +7,16 @@
 
 <style>
 /* =======================
+   TOP BAR
+======================= */
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 4000;
+  background: var(--bg);
+  padding: 10px 15px;
+}
+/* =======================
    MODE SOMBRE – GLOBAL
 ======================= */
 :root{
@@ -136,13 +146,7 @@ input,select{
 <div class="topbar">
   <button onclick="openTutorial()">❓ Tutoriel</button>
 </div>
-.topbar{
-  position: sticky;
-  top: 0;
-  z-index: 4000;
-  background: var(--bg);
-  padding: 10px 15px;
-}
+
 <h1>⏱️ Heures supplémentaires</h1>
 
 
