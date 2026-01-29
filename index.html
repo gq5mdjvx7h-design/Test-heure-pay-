@@ -161,6 +161,12 @@ input[type="number"]{
   border: 1px dashed #4f8cff;
   opacity: 0.75;
 }
+.day{
+  transition: 
+    border 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.1s ease;
+}
 </style>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -335,14 +341,15 @@ if(!DATA[currentKey]){
 }
 closingDay.value = DATA[currentKey].closing || 31;
   renderCalendar();
-  recalc();
+recalc();
+setTimeout(scrollToToday, 100); // ⬅️ ouverture centrée sur aujourd’hui
   
 updateLockUI();
 paidHours.value = DATA[currentKey].paid || 0;
 }
 monthPicker.onchange=loadMonth;
 const closingDay = document.getElementById("closingDay");
-closingDay.onchange = ()=>{
+closingDay.oninput = ()=>{   // ⬅️ input = LIVE
   const [y,m] = currentKey.split("-").map(Number);
   const maxDay = new Date(y, m, 0).getDate();
 
@@ -353,6 +360,7 @@ closingDay.onchange = ()=>{
   closingDay.value = val;
 
   save();
+  renderCalendar(); // 🔥 MAJEUR
   recalc();
 };
 const lockBtn = document.getElementById("lockBtn");
@@ -363,7 +371,15 @@ paidHours.oninput = ()=>{
   save();
   recalc();
 };
-
+function scrollToToday(){
+  const todayEl = document.getElementById("todayCell");
+  if(todayEl){
+    todayEl.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }
+}
 function renderCalendar(){
   const cal = document.getElementById("calendar");
   cal.innerHTML = "";
@@ -398,7 +414,9 @@ function renderCalendar(){
     ){
       div.classList.add("today");
     }
-
+if(isCurrentMonth && d === today.getDate()){
+  div.id = "todayCell";
+}
     /* ====== Contenu ====== */
 
     const val = DATA[currentKey].days[d];
@@ -499,7 +517,7 @@ const months = Object.keys(DATA)
   .sort();
 
 const idx = months.indexOf(currentKey);
-const prevCarry = idx > 0 ? (DATA[months[idx - 1]].carry || 0) : 0;
+const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
   const carry = DATA[currentKey].carry || 0;
   const paid = parseFloat(DATA[currentKey].paid) || 0;
 
@@ -762,47 +780,46 @@ function saveYearData(year, data){
     JSON.stringify(data)
   );
 }
-function recalcCascade(fromKey){
-  const year = getYearFromMonth(fromKey);
+function recalcCascade(){
+  const years = Object.keys(DATA)
+    .map(k => k.slice(0,4))
+    .filter((v,i,a) => a.indexOf(v) === i)
+    .sort();
 
-  const months = Object.keys(DATA)
-    .filter(k => k.startsWith(year))
-    .sort(); // YYYY-MM
+  years.forEach(year => {
+    const months = Object.keys(DATA)
+      .filter(k => k.startsWith(year))
+      .sort(); // YYYY-MM
 
-  for(let i = 0; i < months.length; i++){
-    const key = months[i];
-    const month = DATA[key];
+    let carryFromPrev = 0;
 
-    const prevMonth = i > 0 ? DATA[months[i - 1]] : null;
-    const prevCarry = prevMonth ? (prevMonth.carry || 0) : 0;
+    months.forEach(key => {
+      const month = DATA[key];
 
-    let inPeriod = 0;
-    let outPeriod = 0;
+      let inPeriod = 0;
+      let outPeriod = 0;
 
-    Object.entries(month.days || {}).forEach(([d,h])=>{
-      if(parseInt(d) <= month.closing) inPeriod += h;
-      else outPeriod += h;
+      Object.entries(month.days || {}).forEach(([d,h])=>{
+        if(parseInt(d) <= month.closing) inPeriod += h;
+        else outPeriod += h;
+      });
+
+      const paid = parseFloat(month.paid) || 0;
+
+      /* ======================
+         LOGIQUE PAIE SAINE
+      ====================== */
+
+      // Heures dues à la fin du mois
+      const due = Math.max(0, carryFromPrev + inPeriod - paid);
+
+      // carry du mois = reliquat NON PAYÉ
+      month.carry = due;
+
+      // 👉 ce qui est reporté au mois suivant :
+      carryFromPrev = due + outPeriod;
     });
-
-    const paid = parseFloat(month.paid) || 0;
-
-    /* ====== LOGIQUE PAIE ====== */
-
-    // Heures réellement dues sur la période
-    const due = Math.max(0, inPeriod + prevCarry - paid);
-
-    // Carry = reliquat NON payé
-    month.carry = due;
-
-    /* ====== REPORT AUTOMATIQUE ====== */
-
-    // Injecter les heures hors période dans le mois suivant
-    if(outPeriod > 0 && months[i + 1]){
-      const nextMonth = DATA[months[i + 1]];
-
-      nextMonth.carry = (nextMonth.carry || 0) + outPeriod;
-    }
-  }
+  });
 }
 function importJSONFile(e){
   const file = e.target.files[0];
