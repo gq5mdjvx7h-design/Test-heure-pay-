@@ -484,10 +484,10 @@ const prevCarry = idx > 0 ? (DATA[months[idx - 1]].carry || 0) : 0;
 function calcEuro(){
   if(!unlocked) return;
 
-  const rate = Number(SETTINGS.rate) || 0;
-  const coef25 = Number(SETTINGS.coef25) || 1.25;
-  const coef50 = Number(SETTINGS.coef50) || 1.50;
-  const netCoef = Number(SETTINGS.coefNet) || 1;
+  const rate = Number(document.getElementById("rate").value) || 0;
+const coef25 = Number(document.getElementById("coef25").value) || 1.25;
+const coef50 = Number(document.getElementById("coef50").value) || 1.50;
+const netCoef = Number(document.getElementById("coefNet").value) || 1;
 
   const h25 = Number(document.getElementById("hours25").textContent) || 0;
   const h50 = Number(document.getElementById("hours50").textContent) || 0;
@@ -505,7 +505,6 @@ function calcEuro(){
 
   document.getElementById("euroResult").textContent =
     net.toFixed(2) + " €";
-}
 }
 async function sha256(str){
   const buf = new TextEncoder().encode(str);
@@ -625,13 +624,21 @@ function updateLockUI(){
    PARAMS €
 ======================= */
 ["rate","coef25","coef50","coefNet"].forEach(id=>{
-  document.getElementById(id).value=SETTINGS[id]|| (id==="coefNet"?0.93:(id==="rate"?20:1.25));
-  document.getElementById(id).onchange=()=>{
-    SETTINGS[id]=parseFloat(document.getElementById(id).value)||0;
+  let def;
+  if(id === "rate") def = 20;
+  else if(id === "coef25") def = 1.25;
+  else if(id === "coef50") def = 1.50;
+  else if(id === "coefNet") def = 0.93;
+
+  const input = document.getElementById(id);
+  input.value = SETTINGS[id] ?? def;
+
+  input.oninput = () => {
+    SETTINGS[id] = parseFloat(input.value) || 0;
     localStorage.setItem(
-  kSettings(),
-  JSON.stringify(SETTINGS)
-);
+      kSettings(),
+      JSON.stringify(SETTINGS)
+    );
     recalc();
   };
 });
