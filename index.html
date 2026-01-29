@@ -12,12 +12,9 @@
 .topbar{
   position: sticky;
   top: 0;
-  z-index: 4000;
+  z-index: 2000;
   background: var(--bg);
-  padding: 10px 15px;
-}
-.topbar{
-  padding-top: calc(env(safe-area-inset-top) + 10px);
+  padding: calc(env(safe-area-inset-top) + 10px) 15px 10px;
 }
 /* =======================
    MODE SOMBRE – GLOBAL
@@ -30,13 +27,15 @@
   --accent:#4f8cff;
   --danger:#c0392b;
   --success:#2ecc71;
-}
 body{
   margin:0;
-  padding:15px;
   background:var(--bg);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;
+}
+
+.main{
+  padding:15px;
 }
 h1,h2,h3{text-align:center}
 button{
@@ -110,7 +109,7 @@ input,select{
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:3000;
+  z-index:4000;
 }
 .modal-content{
   background:var(--card);
@@ -148,6 +147,11 @@ input,select{
 <body>
 <div class="topbar">
   <button onclick="openTutorial()">❓ Tutoriel</button>
+</div>
+
+<div class="main">
+  <h1>⏱️ Heures supplémentaires</h1>
+  <!-- tout le reste du contenu -->
 </div>
 
 <h1>⏱️ Heures supplémentaires</h1>
