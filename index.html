@@ -327,32 +327,46 @@ monthPicker.value = new Date().toISOString().slice(0,7);
 
 function loadMonth(){
   currentKey = monthPicker.value;
-const year = getYearFromMonth(currentKey);
-registerYear(year);
-DATA = loadYearData(year);
-if(!DATA[currentKey]){
-  DATA[currentKey] = {
-    days: {},
-    paid: 0,
-    carry: 0,
-    closing: 31,
-    locked: false
-  };
+  const year = getYearFromMonth(currentKey);
+
+  registerYear(year);
+  DATA = loadYearData(year);
+
+  if(!DATA[currentKey]){
+    DATA[currentKey] = {
+      days: {},
+      paid: 0,
+      carry: 0,
+      closing: 31,
+      locked: false
+    };
+  }
+
+  setClosingLimits();
+  syncClosingDate();
+
+  renderCalendar();
+  recalc();
+  updateLockUI();
 }
-syncClosingDate();
-setClosingLimits();
-syncClosingDate();
 const closingDate = document.getElementById("closingDate");
 
 function syncClosingDate(){
+  if(!DATA[currentKey]) return;
+
   const [y, m] = currentKey.split("-").map(Number);
   const day = DATA[currentKey].closing || 31;
 
   closingDate.value =
     `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
 }
-  const dateStr = `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-  closingDate.value = dateStr;
+
+function setClosingLimits(){
+  const [y, m] = currentKey.split("-").map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+
+  closingDate.min = `${y}-${String(m).padStart(2,"0")}-01`;
+  closingDate.max = `${y}-${String(m).padStart(2,"0")}-${lastDay}`;
 }
 
 closingDate.oninput = () => {
@@ -361,7 +375,6 @@ closingDate.oninput = () => {
   const selected = new Date(closingDate.value);
   const [y, m] = currentKey.split("-").map(Number);
 
-  // 🔒 Sécurité : rester dans le mois courant
   if(
     selected.getFullYear() !== y ||
     selected.getMonth() + 1 !== m
@@ -372,18 +385,10 @@ closingDate.oninput = () => {
   }
 
   DATA[currentKey].closing = selected.getDate();
-
   save();
   renderCalendar();
   recalc();
 };
-function setClosingLimits(){
-  const [y, m] = currentKey.split("-").map(Number);
-  const lastDay = new Date(y, m, 0).getDate();
-
-  closingDate.min = `${y}-${String(m).padStart(2,"0")}-01`;
-  closingDate.max = `${y}-${String(m).padStart(2,"0")}-${lastDay}`;
-}
 function scrollToToday(){
   const today = new Date().toISOString().slice(0,7);
   if(currentKey !== today) return;
