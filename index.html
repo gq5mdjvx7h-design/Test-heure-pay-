@@ -313,7 +313,7 @@ let SETTINGS = JSON.parse(
   localStorage.getItem(kSettings()) || "{}"
 );
 let currentKey="", currentDay=null, unlocked=false;
-
+const closingDate = document.getElementById("closingDate");
 /* =======================
    INIT
 ======================= */
@@ -342,6 +342,8 @@ function loadMonth(){
     };
   }
 
+  paidInput.value = DATA[currentKey].paid || 0;
+
   setClosingLimits();
   syncClosingDate();
 
@@ -349,7 +351,13 @@ function loadMonth(){
   recalc();
   updateLockUI();
 }
-const closingDate = document.getElementById("closingDate");
+const paidInput = document.getElementById("paidHours");
+
+paidInput.oninput = () => {
+  DATA[currentKey].paid = parseFloat(paidInput.value) || 0;
+  save();
+  recalc();
+};
 
 function syncClosingDate(){
   if(!DATA[currentKey]) return;
