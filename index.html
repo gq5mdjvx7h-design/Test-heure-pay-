@@ -167,6 +167,14 @@ input[type="number"]{
     opacity 0.2s ease,
     transform 0.1s ease;
 }
+.day.today{
+  border:2px solid #ff9500 !important;
+  opacity: 1 !important;
+  background: #2e2a1f;
+  box-shadow: 0 0 0 2px rgba(255,149,0,0.4);
+  transform: scale(1.03);
+  z-index: 2;
+}
 </style>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -415,13 +423,25 @@ function renderCalendar(){
   const cal = document.getElementById("calendar");
   cal.innerHTML = "";
 
+  // 🗓️ Jours de la semaine
+  const weekDays = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+  weekDays.forEach(d=>{
+    const w = document.createElement("div");
+    w.className = "weekday";
+    w.textContent = d;
+    cal.appendChild(w);
+  });
+
   const [y, m] = currentKey.split("-").map(Number);
+  const firstDay = new Date(y, m-1, 1).getDay() || 7; // lundi = 1
   const daysInMonth = new Date(y, m, 0).getDate();
   const closing = DATA[currentKey].closing;
   const isMonthLocked = DATA[currentKey].locked;
 
-  const today = new Date();
-  const isCurrentMonth = currentKey === today.toISOString().slice(0,7);
+  // ⬅️ Décalage du 1er jour du mois
+  for(let i=1;i<firstDay;i++){
+    cal.appendChild(document.createElement("div"));
+  }
 
   for(let d = 1; d <= daysInMonth; d++){
     const div = document.createElement("div");
