@@ -372,6 +372,9 @@ paidHours.oninput = ()=>{
   recalc();
 };
 function scrollToToday(){
+  const today = new Date().toISOString().slice(0,7);
+  if(currentKey !== today) return;
+
   const todayEl = document.getElementById("todayCell");
   if(todayEl){
     todayEl.scrollIntoView({
@@ -518,7 +521,6 @@ const months = Object.keys(DATA)
 
 const idx = months.indexOf(currentKey);
 const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
-  const carry = DATA[currentKey].carry || 0;
   const paid = parseFloat(DATA[currentKey].paid) || 0;
 
   document.getElementById("prevCarry").textContent = prevCarry.toFixed(2);
