@@ -476,31 +476,37 @@ const prevCarry = idx > 0 ? (DATA[months[idx - 1]].carry || 0) : 0;
   document.getElementById("hours50").textContent = h50.toFixed(2);
 
   if(unlocked){
-    calcEuro(payable);
-  }
+  calcEuro();
+}
 }
 /* =======================
    € CALCUL
 ======================= */
-function calcEuro(h){
+function calcEuro(){
   if(!unlocked) return;
 
   const rate = Number(SETTINGS.rate) || 0;
-  const c25  = Number(SETTINGS.coef25) || 0;
-  const c50  = Number(SETTINGS.coef50) || 0;
-  const netC = Number(SETTINGS.coefNet) || 0;
+  const coef25 = Number(SETTINGS.coef25) || 1.25;
+  const coef50 = Number(SETTINGS.coef50) || 1.50;
+  const netCoef = Number(SETTINGS.coefNet) || 1;
 
-  const h25 = Math.min(8, h);
-  const h50 = Math.max(0, h - 8);
+  const h25 = Number(document.getElementById("hours25").textContent) || 0;
+  const h50 = Number(document.getElementById("hours50").textContent) || 0;
 
-  const brut =
-    (h25 * rate * c25) +
-    (h50 * rate * c50);
+  // ✅ Heures pondérées
+  const weightedHours =
+    (h25 * coef25) +
+    (h50 * coef50);
 
-  const net = brut * netC;
+  // ✅ Brut
+  const brut = weightedHours * rate;
+
+  // ✅ Net
+  const net = brut * netCoef;
 
   document.getElementById("euroResult").textContent =
     net.toFixed(2) + " €";
+}
 }
 async function sha256(str){
   const buf = new TextEncoder().encode(str);
