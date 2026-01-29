@@ -319,8 +319,12 @@ const closingDate = document.getElementById("closingDate");
 ======================= */
 const monthPicker = document.getElementById("monthPicker");
 monthPicker.value = new Date().toISOString().slice(0,7);
-
-
+const paidInput = document.getElementById("paidHours");
+paidInput.oninput = () => {
+  DATA[currentKey].paid = parseFloat(paidInput.value) || 0;
+  save();
+  recalc();
+};
 /* =======================
    CALENDRIER
 ======================= */
@@ -351,13 +355,9 @@ function loadMonth(){
   recalc();
   updateLockUI();
 }
-const paidInput = document.getElementById("paidHours");
 
-paidInput.oninput = () => {
-  DATA[currentKey].paid = parseFloat(paidInput.value) || 0;
-  save();
-  recalc();
-};
+
+
 
 function syncClosingDate(){
   if(!DATA[currentKey]) return;
