@@ -764,20 +764,17 @@ function saveYearData(year, data){
 }
 function recalcCascade(fromKey){
   const year = getYearFromMonth(fromKey);
+
   const months = Object.keys(DATA)
     .filter(k => k.startsWith(year))
-    .sort(); // ordre chrono YYYY-MM
+    .sort(); // YYYY-MM
 
-  const startIndex = months.indexOf(fromKey);
-  if(startIndex === -1) return;
-
-  for(let i = startIndex; i < months.length; i++){
+  for(let i = 0; i < months.length; i++){
     const key = months[i];
     const month = DATA[key];
 
-    const prevCarry = (i === 0)
-      ? 0
-      : DATA[months[i - 1]].carry || 0;
+    const prevMonth = i > 0 ? DATA[months[i - 1]] : null;
+    const prevCarry = prevMonth ? (prevMonth.carry || 0) : 0;
 
     let inPeriod = 0;
     let outPeriod = 0;
@@ -789,11 +786,23 @@ function recalcCascade(fromKey){
 
     const paid = parseFloat(month.paid) || 0;
 
-    const carry = Math.max(0, inPeriod + prevCarry - paid);
-    month.carry = carry;
-  }
+    /* ====== LOGIQUE PAIE ====== */
 
-  
+    // Heures réellement dues sur la période
+    const due = Math.max(0, inPeriod + prevCarry - paid);
+
+    // Carry = reliquat NON payé
+    month.carry = due;
+
+    /* ====== REPORT AUTOMATIQUE ====== */
+
+    // Injecter les heures hors période dans le mois suivant
+    if(outPeriod > 0 && months[i + 1]){
+      const nextMonth = DATA[months[i + 1]];
+
+      nextMonth.carry = (nextMonth.carry || 0) + outPeriod;
+    }
+  }
 }
 function importJSONFile(e){
   const file = e.target.files[0];
