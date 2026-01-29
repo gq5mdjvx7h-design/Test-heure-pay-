@@ -750,7 +750,7 @@ function recalcCascade(fromKey){
 
     const paid = parseFloat(month.paid) || 0;
 
-    const carry = Math.max(0, inPeriod + prevCarry - paid) + outPeriod;
+    const carry = Math.max(0, inPeriod + prevCarry - paid);
     month.carry = carry;
   }
 
