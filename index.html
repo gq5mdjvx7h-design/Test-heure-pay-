@@ -133,13 +133,19 @@ input,select{
 </head>
 
 <body>
-
-<h1>⏱️ Heures supplémentaires</h1>
-<div class="card">
-  <button onclick="openTutorial()">❓tuto</button>
+<div class="topbar">
+  <button onclick="openTutorial()">❓ Tutoriel</button>
 </div>
-❓tuto
-</button>
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 4000;
+  background: var(--bg);
+  padding: 10px 15px;
+}
+<h1>⏱️ Heures supplémentaires</h1>
+
+
 <div class="card">
   <label>Mois suivi</label>
   <input type="month" id="monthPicker">
@@ -485,7 +491,6 @@ function calcEuro(h){
 
   document.getElementById("euroResult").textContent =
     net.toFixed(2) + " €";
-    recalc(); // force recalcul €
 }
 async function sha256(str){
   const buf = new TextEncoder().encode(str);
