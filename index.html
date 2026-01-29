@@ -337,15 +337,20 @@ if(!DATA[currentKey]){
     carry: 0,
     closing: 31,
     locked: false
-    syncClosingDate();
   };
 }
+syncClosingDate();
+setClosingLimits();
+syncClosingDate();
 const closingDate = document.getElementById("closingDate");
 
 function syncClosingDate(){
   const [y, m] = currentKey.split("-").map(Number);
   const day = DATA[currentKey].closing || 31;
 
+  closingDate.value =
+    `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+}
   const dateStr = `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
   closingDate.value = dateStr;
 }
@@ -372,6 +377,13 @@ closingDate.oninput = () => {
   renderCalendar();
   recalc();
 };
+function setClosingLimits(){
+  const [y, m] = currentKey.split("-").map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+
+  closingDate.min = `${y}-${String(m).padStart(2,"0")}-01`;
+  closingDate.max = `${y}-${String(m).padStart(2,"0")}-${lastDay}`;
+}
 function scrollToToday(){
   const today = new Date().toISOString().slice(0,7);
   if(currentKey !== today) return;
