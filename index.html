@@ -184,7 +184,7 @@ input[type="number"]{
     <label>Mois suivi</label>
     <input type="month" id="monthPicker">
     <label>Jour de clôture mensuelle</label>
-    <input type="number" id="closingDay" min="1" max="31">
+ <input type="date" id="closingDate">
   </div>
 
   <div class="calendar card" id="calendar"></div>
@@ -337,38 +337,39 @@ if(!DATA[currentKey]){
     carry: 0,
     closing: 31,
     locked: false
+    syncClosingDate();
   };
 }
-closingDay.value = DATA[currentKey].closing || 31;
-  renderCalendar();
-recalc();
-setTimeout(scrollToToday, 100); // ⬅️ ouverture centrée sur aujourd’hui
-  
-updateLockUI();
-paidHours.value = DATA[currentKey].paid || 0;
+const closingDate = document.getElementById("closingDate");
+
+function syncClosingDate(){
+  const [y, m] = currentKey.split("-").map(Number);
+  const day = DATA[currentKey].closing || 31;
+
+  const dateStr = `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+  closingDate.value = dateStr;
 }
-monthPicker.onchange=loadMonth;
-const closingDay = document.getElementById("closingDay");
-closingDay.oninput = ()=>{   // ⬅️ input = LIVE
-  const [y,m] = currentKey.split("-").map(Number);
-  const maxDay = new Date(y, m, 0).getDate();
 
-  let val = parseInt(closingDay.value) || maxDay;
-  val = Math.min(Math.max(1, val), maxDay);
+closingDate.oninput = () => {
+  if(!closingDate.value) return;
 
-  DATA[currentKey].closing = val;
-  closingDay.value = val;
+  const selected = new Date(closingDate.value);
+  const [y, m] = currentKey.split("-").map(Number);
+
+  // 🔒 Sécurité : rester dans le mois courant
+  if(
+    selected.getFullYear() !== y ||
+    selected.getMonth() + 1 !== m
+  ){
+    alert("⛔ La date doit être dans le mois sélectionné");
+    syncClosingDate();
+    return;
+  }
+
+  DATA[currentKey].closing = selected.getDate();
 
   save();
-  renderCalendar(); // 🔥 MAJEUR
-  recalc();
-};
-const lockBtn = document.getElementById("lockBtn");
-const paidHours = document.getElementById("paidHours");
-
-paidHours.oninput = ()=>{
-  DATA[currentKey].paid = parseFloat(paidHours.value) || 0;
-  save();
+  renderCalendar();
   recalc();
 };
 function scrollToToday(){
@@ -793,10 +794,15 @@ function recalcCascade(){
       .filter(k => k.startsWith(year))
       .sort(); // YYYY-MM
 
-    let carryFromPrev = 0;
+    // Reset propre
+    months.forEach(k => DATA[k].carry = 0);
 
-    months.forEach(key => {
+    for(let i = 0; i < months.length; i++){
+      const key = months[i];
       const month = DATA[key];
+      const prevMonth = i > 0 ? DATA[months[i - 1]] : null;
+
+      const prevCarry = prevMonth ? prevMonth.carry : 0;
 
       let inPeriod = 0;
       let outPeriod = 0;
@@ -808,19 +814,18 @@ function recalcCascade(){
 
       const paid = parseFloat(month.paid) || 0;
 
-      /* ======================
-         LOGIQUE PAIE SAINE
-      ====================== */
+      // Heures réellement dues à la fin de la période
+      const due = Math.max(0, prevCarry + inPeriod - paid);
 
-      // Heures dues à la fin du mois
-      const due = Math.max(0, carryFromPrev + inPeriod - paid);
-
-      // carry du mois = reliquat NON PAYÉ
+      // Reliquat du mois
       month.carry = due;
 
-      // 👉 ce qui est reporté au mois suivant :
-      carryFromPrev = due + outPeriod;
-    });
+      // 🔥 REPORT RÉEL vers le mois suivant
+      if(months[i + 1]){
+        DATA[months[i + 1]].carry =
+          (DATA[months[i + 1]].carry || 0) + outPeriod;
+      }
+    }
   });
 }
 function importJSONFile(e){
