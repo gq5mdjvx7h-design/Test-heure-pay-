@@ -325,6 +325,7 @@ paidInput.oninput = () => {
   save();
   recalc();
 };
+monthPicker.onchange = loadMonth;
 /* =======================
    CALENDRIER
 ======================= */
@@ -551,7 +552,9 @@ const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
   const paid = parseFloat(DATA[currentKey].paid) || 0;
 
   document.getElementById("prevCarry").textContent = prevCarry.toFixed(2);
-  document.getElementById("totalMonth").textContent = inPeriod.toFixed(2);
+  const totalWithCarry = inPeriod + prevCarry;
+document.getElementById("totalMonth").textContent =
+  totalWithCarry.toFixed(2);
   const payable = Math.max(0, inPeriod + prevCarry - paid);
   document.getElementById("carryOver").textContent =
   payable.toFixed(2);
