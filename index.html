@@ -411,10 +411,14 @@ function deleteDayHours(){
 
   if(!confirm(`Supprimer toutes les heures du ${currentDay} ?`)) return;
 
+  // 🗑️ suppression réelle
   delete DATA[currentKey].days[currentDay];
 
-  save();
-  recalc();
+  currentDay = null; // ✅ reset état
+
+  save();            // recalcul cascade + sauvegarde
+  renderCalendar();  // ✅ MAJEUR : refresh UI
+  recalc();          // ✅ recalcul live
   closeHours();
 }
 function openHours(d){
