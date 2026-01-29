@@ -16,6 +16,7 @@
   background: var(--bg);
   padding: calc(env(safe-area-inset-top) + 10px) 15px 10px;
 }
+
 /* =======================
    MODE SOMBRE – GLOBAL
 ======================= */
@@ -27,6 +28,8 @@
   --accent:#4f8cff;
   --danger:#c0392b;
   --success:#2ecc71;
+}
+
 body{
   margin:0;
   background:var(--bg);
@@ -150,8 +153,19 @@ input,select{
 </div>
 
 <div class="main">
+
   <h1>⏱️ Heures supplémentaires</h1>
-  <!-- tout le reste du contenu -->
+
+  <div class="card">
+    <label>Mois suivi</label>
+    <input type="month" id="monthPicker">
+    <label>Jour de clôture mensuelle</label>
+    <input type="number" id="closingDay" min="1" max="31">
+  </div>
+
+  <div class="calendar card" id="calendar"></div>
+
+  <!-- TOUT LE RESTE ICI -->
 </div>
 
 <h1>⏱️ Heures supplémentaires</h1>
