@@ -367,40 +367,51 @@ paidHours.oninput = ()=>{
 function renderCalendar(){
   const cal = document.getElementById("calendar");
   cal.innerHTML = "";
-  const [y,m] = currentKey.split("-").map(Number);
-  const days = new Date(y,m,0).getDate();
 
-  for(let d=1; d<=days; d++){
+  const [y, m] = currentKey.split("-").map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const closing = DATA[currentKey].closing;
+  const isMonthLocked = DATA[currentKey].locked;
+
+  const today = new Date();
+  const isCurrentMonth = currentKey === today.toISOString().slice(0,7);
+
+  for(let d = 1; d <= daysInMonth; d++){
     const div = document.createElement("div");
     div.className = "day";
 
-    const isAfterClosing = d > DATA[currentKey].closing;
-    const isMonthLocked = DATA[currentKey].locked;
+    const isAfterClosing = d > closing;
 
-    if(isAfterClosing || isMonthLocked){
-      div.classList.add("locked");
+    /* ====== État visuel ====== */
+
+    if(isAfterClosing){
+      div.classList.add("after-closing"); // heures reportées
     }
 
-    const today = new Date();
+    if(isMonthLocked){
+      div.classList.add("locked"); // verrouillage total
+    }
+
     if(
-      d === today.getDate() &&
-      currentKey === today.toISOString().slice(0,7)
+      isCurrentMonth &&
+      d === today.getDate()
     ){
       div.classList.add("today");
     }
 
+    /* ====== Contenu ====== */
+
     const val = DATA[currentKey].days[d];
-    div.innerHTML = `<b>${d}</b><br>${val ? val.toFixed(2)+" h" : ""}`;
+    div.innerHTML = `
+      <b>${d}</b><br>
+      ${val ? val.toFixed(2) + " h" : ""}
+    `;
 
-    if(isMonthLocked){
-  div.classList.add("locked");
-} else {
-  div.onclick = () => openHours(d);
-}
+    /* ====== Interaction ====== */
 
-if(isAfterClosing){
-  div.classList.add("after-closing");
-}
+    if(!isMonthLocked){
+      div.onclick = () => openHours(d);
+    }
 
     cal.appendChild(div);
   }
