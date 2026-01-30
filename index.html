@@ -1149,14 +1149,14 @@ function recalcCascade(){
     .filter(k => /^\d{4}-\d{2}$/.test(k))
     .sort();
 
-  let lastKnownCarry = 0; // 🔑 mémoire du dernier reliquat valide
+  let runningCarry = 0; // 🔁 stock d'heures continu
 
   months.forEach(key => {
     const month = DATA[key];
     const { start, end } = getPeriodBounds(key);
     const [y, m] = key.split("-").map(Number);
 
-    // 🔢 total des heures DE LA PÉRIODE uniquement
+    // 🔢 heures de la période uniquement
     let periodHours = 0;
 
     Object.entries(month.days || {}).forEach(([d, h]) => {
@@ -1166,18 +1166,19 @@ function recalcCascade(){
       }
     });
 
-    const paid = parseFloat(month.paid) || 0;
+    const paid = Number(month.paid) || 0;
 
-    // ✅ FORMULE MÉTIER CORRECTE
-    const carry =
-      lastKnownCarry +
-      periodHours -
-      paid;
+    // ➕ alimentation du stock
+    runningCarry += periodHours;
 
-    month.carry = Math.max(0, carry);
+    // ➖ paiement
+    runningCarry -= paid;
 
-    // 🔄 mémorisation pour le mois suivant (même année ou non)
-    lastKnownCarry = month.carry;
+    // 🔒 jamais négatif
+    if(runningCarry < 0) runningCarry = 0;
+
+    // 💾 sauvegarde du reliquat du mois
+    month.carry = runningCarry;
   });
 }
 function importJSONFile(e){
