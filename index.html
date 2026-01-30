@@ -712,19 +712,30 @@ function confirmManual(){
   input.value = ""; // ✅ reset
 }
 function getPreviousCarry(monthKey){
-  const months = Object.keys(DATA)
-    .filter(k => /^\d{4}-\d{2}$/.test(k))
-    .sort();
+  // 🔗 récupérer TOUS les mois de TOUTES les années
+  const allMonths = [];
 
-  let carry = 0;
+  Object.values(ALL_DATA).forEach(yearData=>{
+    Object.keys(yearData).forEach(key=>{
+      if(/^\d{4}-\d{2}$/.test(key)){
+        allMonths.push({ key, month: yearData[key] });
+      }
+    });
+  });
 
-  for(const k of months){
-    if(k === monthKey) break;
-    if(DATA[k].carry != null){
-      carry = DATA[k].carry;
+  // tri chronologique
+  allMonths.sort((a,b)=> a.key.localeCompare(b.key));
+
+  let prevCarry = 0;
+
+  for(const item of allMonths){
+    if(item.key === monthKey) break;
+    if(item.month.carry != null){
+      prevCarry = item.month.carry;
     }
   }
-  return carry;
+
+  return prevCarry;
 }
 /* =======================
    CALCUL
