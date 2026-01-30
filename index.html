@@ -484,9 +484,13 @@ if(isCurrentMonth && d === today.getDate()){
 
     /* ====== Interaction ====== */
 
-    if(!isMonthLocked){
-      div.onclick = () => openHours(d);
-    }
+    div.onclick = () => {
+  if(isMonthLocked){
+    alert("🔒 Mois verrouillé (paie validée)");
+    return;
+  }
+  openHours(d);
+};
 
     cal.appendChild(div);
   }
@@ -788,23 +792,7 @@ function exportAnnualPDF(){
 
 loadMonth();
 
-function autoBackup(){
-  const stamp = new Date().toISOString()
-  localStorage.setItem("AUTO_SAVE_DATE_" + currentSuffix, stamp)
-  updateSaveBadges()
-}
 
-  // 🧹 Nettoyage : max 30 backups par année
-  const keys = Object.keys(localStorage)
-    .filter(k => k.startsWith(`${STORAGE_PREFIX}_BACKUP_${year}_`))
-    .sort(); // ordre chrono
-
-  if(keys.length > 30){
-    keys.slice(0, keys.length - 30).forEach(k =>
-      localStorage.removeItem(k)
-    );
-  }
-}
 function registerYear(year){
   let index = JSON.parse(localStorage.getItem(kIndex()) || "[]");
   if(!index.includes(year)){
