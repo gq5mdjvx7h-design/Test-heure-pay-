@@ -455,7 +455,22 @@ function loadMonth(){
     locked: false
   };
 }
+// 🧹 Correction automatique des anciennes clôtures invalides
+{
+  const [y, m] = currentKey.split("-").map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  const closing = DATA[currentKey].closing;
 
+  const isInvalid =
+    !closing ||
+    closing > lastDay ||
+    new Date(y, m - 1, closing).getDay() !== 0;
+
+  if(isInvalid){
+    DATA[currentKey].closing = getLastSunday(y, m - 1);
+    save(); // persiste la correction
+  }
+}
   paidInput.value = DATA[currentKey].paid || 0;
 
   setClosingLimits();
