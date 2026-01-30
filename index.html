@@ -561,9 +561,9 @@ const isAfterClosing = date > end;
 
     /* ====== État visuel ====== */
 
-    if(isAfterClosing){
-      div.classList.add("after-closing"); // heures reportées
-    }
+    if(!isInPeriod){
+  div.classList.add("after-closing");
+}
 
     if(isMonthLocked){
       div.classList.add("locked"); // verrouillage total
