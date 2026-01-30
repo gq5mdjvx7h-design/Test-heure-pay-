@@ -380,6 +380,7 @@ let DATA = {};
 let SETTINGS = JSON.parse(
   localStorage.getItem(kSettings()) || "{}"
 );
+let ALL_DATA = {}; // 🔑 cache de toutes les années
 let currentKey="", currentDay=null, unlocked=false;
 const closingDate = document.getElementById("closingDate");
 /* =======================
@@ -441,9 +442,14 @@ function loadMonth(){
   currentKey = monthPicker.value;
   const year = getYearFromMonth(currentKey);
 
-  // 🔐 index année
-  registerYear(year);
-  DATA = loadYearData(year);
+registerYear(year);
+
+if(!ALL_DATA[year]){
+  ALL_DATA[year] = loadYearData(year);
+}
+
+DATA = ALL_DATA[year];
+ 
 
   const [y, m] = currentKey.split("-").map(Number);
   let needSave = false;
@@ -868,20 +874,12 @@ function save(){
   Date.now()
 );
   // 🔥 charger toutes les années connues
-  const index = JSON.parse(localStorage.getItem(kIndex()) || "[]");
-
-
   recalcCascade();
 
-  // 🔁 resauvegarde chaque année
-  index.forEach(year=>{
-    const yearData = {};
-    Object.keys(DATA)
-      .filter(k => k.startsWith(year))
-      .forEach(k => yearData[k] = DATA[k]);
-
-    saveYearData(year, yearData);
-  });
+// 💾 sauvegarde TOUTES les années chargées
+Object.entries(ALL_DATA).forEach(([year, yearData])=>{
+  saveYearData(year, yearData);
+});
 
   updateSaveBadge();
 }
