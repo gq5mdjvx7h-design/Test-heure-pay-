@@ -719,42 +719,35 @@ function getPreviousCarry(monthKey){
    CALCUL
 ======================= */
 function recalc(){
-  const paid = Number(DATA[currentKey].paid) || 0;
-
-const computedCarry =
-  prevCarry +
-  periodHours -
-  paid;
   const { start, end } = getPeriodBounds(currentKey);
 
   // 🔢 Heures par semaine ISO (lundi → dimanche)
   const weeks = {};
 
-  Object.entries(DATA)
-  .forEach(([monthKey, month])=>{
-      Object.entries(month.days || {}).forEach(([d,h])=>{
-        const date = new Date(
-          monthKey.split("-")[0],
-          monthKey.split("-")[1] - 1,
-          d
-        );
+  Object.entries(DATA).forEach(([monthKey, month])=>{
+    Object.entries(month.days || {}).forEach(([d,h])=>{
+      const date = new Date(
+        monthKey.split("-")[0],
+        monthKey.split("-")[1] - 1,
+        d
+      );
 
-        if(date < start || date > end) return;
+      if(date < start || date > end) return;
 
-        // 📅 Calcul du lundi de la semaine
-        const monday = new Date(date);
-        const day = monday.getDay() || 7; // dimanche = 7
-        monday.setDate(monday.getDate() - day + 1);
-        const weekKey =
-  monday.getFullYear() + "-" +
-  String(monday.getMonth()+1).padStart(2,"0") + "-" +
-  String(monday.getDate()).padStart(2,"0");
+      const monday = new Date(date);
+      const day = monday.getDay() || 7;
+      monday.setDate(monday.getDate() - day + 1);
 
-        weeks[weekKey] = (weeks[weekKey] || 0) + h;
-      });
+      const weekKey =
+        monday.getFullYear() + "-" +
+        String(monday.getMonth()+1).padStart(2,"0") + "-" +
+        String(monday.getDate()).padStart(2,"0");
+
+      weeks[weekKey] = (weeks[weekKey] || 0) + h;
     });
+  });
 
-  // 🧮 Application des majorations SEMAINE PAR SEMAINE
+  // 🧮 Totaux période
   let total25 = 0;
   let total50 = 0;
   let periodHours = 0;
@@ -768,17 +761,26 @@ const computedCarry =
   document.getElementById("hours25").textContent = total25.toFixed(2);
   document.getElementById("hours50").textContent = total50.toFixed(2);
 
+  // 🔁 Report précédent
   const prevCarry = getPreviousCarry(currentKey);
+  document.getElementById("prevCarry").textContent =
+    prevCarry.toFixed(2);
 
-document.getElementById("prevCarry").textContent =
-  prevCarry.toFixed(2);
+  // 🔵 Total période
+  document.getElementById("totalMonth").textContent =
+    periodHours.toFixed(2);
 
-// 🔵 Total du mois = heures DE LA PÉRIODE uniquement
-document.getElementById("totalMonth").textContent =
-  periodHours.toFixed(2);
+  // ➖ Payé
+  const paid = Number(DATA[currentKey].paid) || 0;
+
+  // ✅ RELIQUAT LOCAL (FORMULE MÉTIER)
+  const computedCarry =
+    prevCarry +
+    periodHours -
+    paid;
 
   document.getElementById("carryOver").textContent =
-  Math.max(0, computedCarry).toFixed(2);
+    Math.max(0, computedCarry).toFixed(2);
 
   if(unlocked) calcEuro();
 }
