@@ -441,44 +441,54 @@ function loadMonth(){
   currentKey = monthPicker.value;
   const year = getYearFromMonth(currentKey);
 
+  // 🔐 index année
   registerYear(year);
   DATA = loadYearData(year);
 
+  const [y, m] = currentKey.split("-").map(Number);
+  let needSave = false;
+
+  // 🆕 Création du mois s’il n’existe pas
   if(!DATA[currentKey]){
-  const [y, m] = currentKey.split("-").map(Number);
-
-  DATA[currentKey] = {
-    days: {},
-    paid: 0,
-    carry: 0,
-    closing: getLastSunday(y, m - 1), // ✅ dernier dimanche automatique
-    locked: false
-  };
-}
-// 🧹 Correction automatique des anciennes clôtures invalides
-{
-  const [y, m] = currentKey.split("-").map(Number);
-  const lastDay = new Date(y, m, 0).getDate();
-  const closing = DATA[currentKey].closing;
-
-  const isInvalid =
-    !closing ||
-    closing > lastDay ||
-    new Date(y, m - 1, closing).getDay() !== 0;
-
-  if(isInvalid){
-    DATA[currentKey].closing = getLastSunday(y, m - 1);
-    save(); // persiste la correction
+    DATA[currentKey] = {
+      days: {},
+      paid: 0,
+      carry: 0,
+      closing: getLastSunday(y, m - 1), // ✅ dernier dimanche
+      locked: false
+    };
+    needSave = true;
   }
-}
-  paidInput.value = DATA[currentKey].paid || 0;
 
+  // 🧹 Correction automatique des anciennes clôtures invalides
+  {
+    const lastDay = new Date(y, m, 0).getDate();
+    const closing = DATA[currentKey].closing;
+
+    const isInvalid =
+      !closing ||
+      closing > lastDay ||
+      new Date(y, m - 1, closing).getDay() !== 0;
+
+    if(isInvalid){
+      DATA[currentKey].closing = getLastSunday(y, m - 1);
+      needSave = true;
+    }
+  }
+
+  // 🔄 Sync UI
+  paidInput.value = DATA[currentKey].paid || 0;
   setClosingLimits();
   syncClosingDate();
 
   renderCalendar();
   recalc();
   scrollToToday();
+
+  // 💾 Sauvegarde UNE SEULE FOIS si nécessaire
+  if(needSave){
+    save();
+  }
 }
 
 
