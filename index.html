@@ -312,6 +312,18 @@ input[type="number"]{
     <button class="secondary" onclick="closeTutorial()">Fermer</button>
   </div>
 </div>
+<div class="modal" id="legalModal">
+  <div class="modal-content">
+    <h2>⚠️ Avertissement important</h2>
+    <p style="font-size:14px">
+      Cet outil est un <b>simulateur personnel</b>.<br><br>
+      Les calculs sont indicatifs et peuvent différer
+      de votre bulletin de paie réel.<br><br>
+      <b>Seuls les documents de l’employeur font foi.</b>
+    </p>
+    <button onclick="acceptLegal()">J’ai compris</button>
+  </div>
+</div>
 <div class="modal" id="onboardingModal">
   <div class="modal-content">
     <h2>👋 Bienvenue</h2>
@@ -383,14 +395,6 @@ function closeOnboarding(){
   document.getElementById("onboardingModal").style.display="none";
 }
 
-window.addEventListener("load",()=>{
-  if(
-    localStorage.getItem("LEGAL_OK") &&
-    !localStorage.getItem("ONBOARDING_DONE")
-  ){
-    document.getElementById("onboardingModal").style.display="flex";
-  }
-});
 function getPeriodBounds(monthKey){
   const [y, m] = monthKey.split("-").map(Number);
 
@@ -1034,18 +1038,7 @@ if(payload.SETTINGS){
 document.getElementById("importFile").addEventListener("change", importJSONFile);
 
 </script>
-<div class="modal" id="legalModal">
-  <div class="modal-content">
-    <h2>⚠️ Avertissement important</h2>
-    <p style="font-size:14px">
-      Cet outil est un <b>simulateur personnel</b>.<br><br>
-      Les calculs sont indicatifs et peuvent différer
-      de votre bulletin de paie réel.<br><br>
-      <b>Seuls les documents de l’employeur font foi.</b>
-    </p>
-    <button onclick="acceptLegal()">J’ai compris</button>
-  </div>
-</div>
+
 <div class="card" style="font-size:13px;color:#aaa">
   <h3>📘 Notice utilisateur</h3>
 
