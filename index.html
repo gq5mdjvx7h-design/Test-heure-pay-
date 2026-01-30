@@ -902,13 +902,20 @@ function updateSaveBadge(){
   const el = document.querySelector(".badge.ok");
   if(!el) return;
 
-  const stamp = localStorage.getItem(
+  const raw = localStorage.getItem(
     `${STORAGE_PREFIX}_AUTO_SAVE_DATE`
   );
 
-  el.textContent = stamp
-    ? "🟢 Sauvegarde locale : " + new Date(stamp).toLocaleString()
-    : "🟢 Sauvegarde locale auto";
+  const stamp = Number(raw);
+
+  if(!stamp || isNaN(stamp)){
+    el.textContent = "🟢 Sauvegarde locale auto";
+    return;
+  }
+
+  el.textContent =
+    "🟢 Sauvegarde locale : " +
+    new Date(stamp).toLocaleString();
 }
 function exportJSON(){
   const year = getYearFromMonth(currentKey);
