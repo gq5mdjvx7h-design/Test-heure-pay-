@@ -675,48 +675,34 @@ function toggleChangeCode(){
 /* =======================
    SAUVEGARDE
 ======================= */
+
 function save(){
-  localStorage.setItem(STORAGE.data, JSON.stringify(data))
+  const year = getYearFromMonth(currentKey);
 
-  const stamp = new Date().toISOString()
-  localStorage.setItem("AUTO_SAVE_DATE_" + currentSuffix, stamp)
+  // Sauvegarde réelle des données
+  saveYearData(year, DATA);
 
-  updateSaveBadges()
+  // Date de sauvegarde locale
+  const stamp = new Date().toISOString();
+  localStorage.setItem(
+    `${STORAGE_PREFIX}_AUTO_SAVE_DATE`,
+    stamp
+  );
+
+  updateSaveBadge();
 }
-async function changeCode(){
-  const oldC = document.getElementById("oldCode").value;
-  const newC = document.getElementById("newCode").value;
-  const confC = document.getElementById("confirmCode").value;
+function updateSaveBadge(){
+  const el = document.querySelector(".badge.ok");
+  if(!el) return;
 
-  if(await sha256(oldC) !== await getSecureCode()){
-    alert("❌ Ancien code incorrect");
-    return;
-  }
+  const stamp = localStorage.getItem(
+    `${STORAGE_PREFIX}_AUTO_SAVE_DATE`
+  );
 
-  if(newC.length < 4){
-    alert("⚠️ 4 caractères minimum");
-    return;
-  }
-
-  if(newC !== confC){
-    alert("❌ Confirmation différente");
-    return;
-  }
-
-  localStorage.setItem(kCode(), await sha256(newC));
-  alert("✅ Code modifié");
-
-  document.getElementById("changeCodeBox").style.display="none";
+  el.textContent = stamp
+    ? "🟢 Sauvegarde locale : " + new Date(stamp).toLocaleString()
+    : "🟢 Sauvegarde locale auto";
 }
-
-lockBtn.onclick = ()=>{
-  DATA[currentKey].locked = !DATA[currentKey].locked;
-
-  save();             // sauvegarde + cascade
-  updateLockUI();     // texte du bouton
-  renderCalendar();   // 🔥 MAJ VISUELLE IMMÉDIATE
-  recalc();           // 🔁 recalcul live
-};
 function exportJSON(){
   const year = getYearFromMonth(currentKey);
 
@@ -932,6 +918,7 @@ if(payload.SETTINGS){
     });
 
     saveYearData(year, existing);
+    updateSaveBadge();
 
     alert(
       `✅ Import terminé\n\n` +
