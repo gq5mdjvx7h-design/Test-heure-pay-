@@ -855,7 +855,17 @@ function recalcCascade(){
       const paid = parseFloat(month.paid) || 0;
 
       // Heures réellement dues à la fin de la période
-      const due = Math.max(0, prevCarry + inPeriod - paid);
+      // 🔒 Report précédent (jamais remajoré)
+let remainingCarry = Math.max(0, prevCarry - paid);
+
+// 💡 Part du paiement qui dépasse le report
+let paidOnPeriod = Math.max(0, paid - prevCarry);
+
+// 📆 Heures de la période encore dues
+let remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
+
+// 📦 Reliquat du mois (STOCKÉ)
+month.carry = remainingCarry + remainingPeriod;
 
       // Reliquat du mois
       month.carry = due;
