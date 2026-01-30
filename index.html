@@ -855,58 +855,44 @@ function saveYearData(year, data){
   );
 }
 function recalcCascade(){
-  const years = Object.keys(DATA)
-    .map(k => k.slice(0,4))
-    .filter((v,i,a) => a.indexOf(v) === i)
-    .sort();
+  // 🔁 Tous les mois, toutes années confondues
+  const months = Object.keys(DATA).sort(); // YYYY-MM = ordre naturel
 
-  years.forEach(year => {
-    const months = Object.keys(DATA)
-      .filter(k => k.startsWith(year))
-      .sort(); // YYYY-MM
+  // reset
+  months.forEach(k => DATA[k].carry = 0);
 
-    // Reset propre
-    months.forEach(k => DATA[k].carry = 0);
+  for(let i = 0; i < months.length; i++){
+    const key = months[i];
+    const month = DATA[key];
+    const prevMonth = i > 0 ? DATA[months[i - 1]] : null;
 
-    for(let i = 0; i < months.length; i++){
-      const key = months[i];
-      const month = DATA[key];
-      const prevMonth = i > 0 ? DATA[months[i - 1]] : null;
+    const prevCarry = prevMonth ? prevMonth.carry : 0;
 
-      const prevCarry = prevMonth ? prevMonth.carry : 0;
+    const { start, end } = getPeriodBounds(key);
 
-      const { start, end } = getPeriodBounds(key);
+    let inPeriod = 0;
 
-let inPeriod = 0;
+    Object.entries(month.days || {}).forEach(([d,h])=>{
+      const date = new Date(
+        key.split("-")[0],
+        key.split("-")[1] - 1,
+        d
+      );
 
-Object.entries(month.days || {}).forEach(([d,h])=>{
-  const date = new Date(
-    key.split("-")[0],
-    key.split("-")[1] - 1,
-    d
-  );
+      if(date >= start && date <= end){
+        inPeriod += h;
+      }
+    });
 
-  if(date >= start && date <= end){
-    inPeriod += h;
+    const paid = parseFloat(month.paid) || 0;
+
+    // 🔒 logique de paiement
+    const remainingCarry = Math.max(0, prevCarry - paid);
+    const paidOnPeriod = Math.max(0, paid - prevCarry);
+    const remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
+
+    month.carry = remainingCarry + remainingPeriod;
   }
-});
-
-      const paid = parseFloat(month.paid) || 0;
-
-      // Heures réellement dues à la fin de la période
-      // 🔒 Report précédent (jamais remajoré)
-let remainingCarry = Math.max(0, prevCarry - paid);
-
-// 💡 Part du paiement qui dépasse le report
-let paidOnPeriod = Math.max(0, paid - prevCarry);
-
-// 📆 Heures de la période encore dues
-let remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
-
-month.carry = remainingCarry + remainingPeriod;
-
-    }
-  });
 }
 function importJSONFile(e){
   const file = e.target.files[0];
