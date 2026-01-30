@@ -216,7 +216,7 @@ input[type="number"]{
 <div class="card">
   <h3>Récapitulatif</h3>
   <p>Report précédent : <b id="prevCarry">0.00</b> h</p>
-<p>Total mois : <b id="totalMonth">0.00</b> h</p>
+<p>Total période : <b id="totalMonth">0.00</b> h</p>
 <p>Heures à 25 % : <b id="hours25">0.00</b> h</p>
 <p>Heures à 50 % : <b id="hours50">0.00</b> h</p>
 <p style="font-size:12px;color:#aaa;margin-top:8px">
@@ -701,6 +701,20 @@ function confirmManual(){
   applyHours(h);
   input.value = ""; // ✅ reset
 }
+function getPreviousCarry(monthKey){
+  const months = Object.keys(DATA)
+    .filter(k => /^\d{4}-\d{2}$/.test(k))
+    .sort();
+
+  let carry = 0;
+
+  for(const k of months){
+    if(k === monthKey) break;
+    carry = DATA[k].carry || carry;
+  }
+
+  return carry;
+}
 /* =======================
    CALCUL
 ======================= */
@@ -748,13 +762,14 @@ function recalc(){
   document.getElementById("hours25").textContent = total25.toFixed(2);
   document.getElementById("hours50").textContent = total50.toFixed(2);
 
-  const months = Object.keys(DATA).sort();
-const idx = months.indexOf(currentKey);
-const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
+  const prevCarry = getPreviousCarry(currentKey);
 
-  document.getElementById("prevCarry").textContent = prevCarry.toFixed(2);
-  document.getElementById("totalMonth").textContent =
-    (periodHours + prevCarry).toFixed(2);
+document.getElementById("prevCarry").textContent =
+  prevCarry.toFixed(2);
+
+// 🔵 Total du mois = heures DE LA PÉRIODE uniquement
+document.getElementById("totalMonth").textContent =
+  periodHours.toFixed(2);
 
   document.getElementById("carryOver").textContent =
     (DATA[currentKey].carry || 0).toFixed(2);
