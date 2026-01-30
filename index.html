@@ -340,16 +340,17 @@ input[type="number"]{
 <script>
 function acceptLegal(){
   localStorage.setItem("LEGAL_OK","1");
-  document.getElementById("legalModal").style.display="none";
+  document.getElementById("legalModal").classList.remove("open");
 }
 window.addEventListener("load",()=>{
   if(!localStorage.getItem("LEGAL_OK")){
-    document.getElementById("legalModal").style.display="flex";
+    document.getElementById("legalModal").classList.add("open");
     return;
   }
 
   if(!localStorage.getItem("ONBOARDING_DONE")){
-    document.getElementById("onboardingModal").style.display="flex";
+    document.getElementById("onboardingModal").classList.add("open");
+document.getElementById("onboardingModal").classList.remove("open");
   }
 });
 
@@ -631,10 +632,10 @@ function openHours(d){
     b.onclick=()=>applyHours(v);
     c.appendChild(b);
   });
-  document.getElementById("hoursModal").style.display="flex";
+  document.getElementById("hoursModal").classList.add("open");
 }
 function closeHours(){
-  document.getElementById("hoursModal").style.display="none";
+  document.getElementById("hoursModal").classList.remove("open");
 }
 function applyHours(h){
   if(h <= 0) return;
@@ -877,10 +878,10 @@ const payload = {
   };
 });
    function openTutorial(){
-  document.getElementById("tutorialModal").style.display = "flex";
+  document.getElementById("tutorialModal").classList.add("open");
 }
 function closeTutorial(){
-  document.getElementById("tutorialModal").style.display = "none";
+  document.getElementById("tutorialModal").classList.remove("open");
 }
 function exportMonthlyPDF(){
   const { jsPDF } = window.jspdf;
