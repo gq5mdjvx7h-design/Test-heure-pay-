@@ -627,11 +627,9 @@ function recalc(){
   document.getElementById("hours25").textContent = total25.toFixed(2);
   document.getElementById("hours50").textContent = total50.toFixed(2);
 
-  // 🔁 Report précédent
-  const year = getYearFromMonth(currentKey);
-  const months = Object.keys(DATA).filter(k=>k.startsWith(year)).sort();
-  const idx = months.indexOf(currentKey);
-  const prevCarry = idx > 0 ? DATA[months[idx-1]].carry : 0;
+  const months = Object.keys(DATA).sort();
+const idx = months.indexOf(currentKey);
+const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
 
   document.getElementById("prevCarry").textContent = prevCarry.toFixed(2);
   document.getElementById("totalMonth").textContent =
