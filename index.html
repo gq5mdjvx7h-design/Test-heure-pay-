@@ -542,7 +542,9 @@ const isCurrentMonth = currentKey === today.toISOString().slice(0,7);
   const firstDay = new Date(y, m-1, 1).getDay() || 7; // lundi = 1
   const daysInMonth = new Date(y, m, 0).getDate();
   const closing = DATA[currentKey].closing;
+  const { start, end } = getPeriodBounds(currentKey);
   const isMonthLocked = DATA[currentKey].locked;
+  
 
   // ⬅️ Décalage du 1er jour du mois
   for(let i=1;i<firstDay;i++){
@@ -553,7 +555,9 @@ const isCurrentMonth = currentKey === today.toISOString().slice(0,7);
     const div = document.createElement("div");
     div.className = "day";
 
-    const isAfterClosing = d > closing;
+    const date = new Date(y, m - 1, d);
+const isInPeriod = date >= start && date <= end;
+const isAfterClosing = date > end;
 
     /* ====== État visuel ====== */
 
@@ -798,11 +802,7 @@ function toggleChangeCode(){
 function save(){
   // 🔥 charger toutes les années connues
   const index = JSON.parse(localStorage.getItem(kIndex()) || "[]");
-  DATA = {};
 
-  index.forEach(year=>{
-    Object.assign(DATA, loadYearData(year));
-  });
 
   recalcCascade();
 
