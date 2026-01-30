@@ -1134,51 +1134,36 @@ function recalcCascade(){
     .filter(k => /^\d{4}-\d{2}$/.test(k))
     .sort();
 
-  months.forEach(k => DATA[k].carry = 0);
+  let lastKnownCarry = 0; // 🔑 mémoire du dernier reliquat valide
 
-  for(let i = 0; i < months.length; i++){
-    const key = months[i];
+  months.forEach(key => {
     const month = DATA[key];
-
-    const prevKey = months[i - 1];
-    const prevCarry =
-      prevKey && DATA[prevKey]
-        ? DATA[prevKey].carry
-        : 0;
-
     const { start, end } = getPeriodBounds(key);
+    const [y, m] = key.split("-").map(Number);
 
+    // 🔢 total des heures DE LA PÉRIODE uniquement
     let periodHours = 0;
-    let afterClosingHours = 0;
 
-    Object.entries(month.days || {}).forEach(([d,h])=>{
-      const date = new Date(
-        key.split("-")[0],
-        key.split("-")[1] - 1,
-        d
-      );
-
+    Object.entries(month.days || {}).forEach(([d, h]) => {
+      const date = new Date(y, m - 1, d);
       if(date >= start && date <= end){
         periodHours += h;
-      } else if(date > end){
-        // 🔥 FIN DE MOIS → REPORT
-        afterClosingHours += h;
       }
     });
 
     const paid = parseFloat(month.paid) || 0;
 
-    // 💰 logique de paiement
-    const remainingCarry = Math.max(0, prevCarry - paid);
-    const paidOnPeriod = Math.max(0, paid - prevCarry);
-    const remainingPeriod = Math.max(0, periodHours - paidOnPeriod);
+    // ✅ FORMULE MÉTIER CORRECTE
+    const carry =
+      lastKnownCarry +
+      periodHours -
+      paid;
 
-    // ✅ REPORT FINAL CORRECT
-    month.carry =
-      remainingCarry +
-      remainingPeriod +
-      afterClosingHours;
-  }
+    month.carry = Math.max(0, carry);
+
+    // 🔄 mémorisation pour le mois suivant (même année ou non)
+    lastKnownCarry = month.carry;
+  });
 }
 function importJSONFile(e){
   const file = e.target.files[0];
