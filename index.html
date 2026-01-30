@@ -925,27 +925,181 @@ function closeTutorial(){
 function exportMonthlyPDF(){
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
-  pdf.text("Récapitulatif mensuel – Heures supplémentaires",10,15);
-  pdf.text("Mois : "+currentKey,10,25);
-  const total = document.getElementById("totalMonth").textContent;
-pdf.text("Total période : "+total+" h",10,35);
-  pdf.text("Report : "+carryOver.textContent+" h",10,45);
-  pdf.save("heures_mensuelles_"+currentKey+".pdf");
-}
 
+  const [y, m] = currentKey.split("-").map(Number);
+  const month = DATA[currentKey];
+  const { start, end } = getPeriodBounds(currentKey);
+
+  let yPos = 15;
+
+  // 🧾 EN-TÊTE
+  pdf.setFontSize(14);
+  pdf.text("Récapitulatif mensuel – Heures supplémentaires", 10, yPos);
+  yPos += 8;
+
+  pdf.setFontSize(11);
+  pdf.text(
+    `Mois suivi : ${currentKey} | Période de paie : ${formatDate(start)} → ${formatDate(end)}`,
+    10,
+    yPos
+  );
+  yPos += 10;
+
+  // 📊 TABLEAU
+  pdf.setFontSize(10);
+  pdf.text("Date", 10, yPos);
+  pdf.text("Heures", 50, yPos);
+  pdf.text("Statut", 80, yPos);
+  yPos += 4;
+  pdf.line(10, yPos, 200, yPos);
+  yPos += 4;
+
+  let periodHours = 0;
+  let afterClosingHours = 0;
+
+  Object.entries(month.days || {})
+    .sort(([a],[b]) => a - b)
+    .forEach(([d,h])=>{
+      const date = new Date(y, m - 1, d);
+      const inPeriod = date >= start && date <= end;
+      const status = inPeriod ? "Période" : "Report";
+
+      if(inPeriod) periodHours += h;
+      else afterClosingHours += h;
+
+      pdf.text(formatDate(date), 10, yPos);
+      pdf.text(h.toFixed(2) + " h", 50, yPos);
+      pdf.text(status, 80, yPos);
+
+      yPos += 6;
+      if(yPos > 270){
+        pdf.addPage();
+        yPos = 15;
+      }
+    });
+
+  yPos += 6;
+  pdf.line(10, yPos, 200, yPos);
+  yPos += 8;
+
+  // 🧮 RÉCAP
+  const paid = month.paid || 0;
+  const prevCarry =
+    Object.keys(DATA).sort().indexOf(currentKey) > 0
+      ? DATA[Object.keys(DATA).sort()[Object.keys(DATA).sort().indexOf(currentKey)-1]].carry
+      : 0;
+
+  pdf.setFontSize(11);
+  pdf.text(`Report précédent : ${prevCarry.toFixed(2)} h`, 10, yPos); yPos += 6;
+  pdf.text(`Heures période : ${periodHours.toFixed(2)} h`, 10, yPos); yPos += 6;
+  pdf.text(`Heures reportées (fin de mois) : ${afterClosingHours.toFixed(2)} h`, 10, yPos); yPos += 6;
+  pdf.text(`Heures payées : ${paid.toFixed(2)} h`, 10, yPos); yPos += 6;
+  pdf.text(`Reliquat final : ${month.carry.toFixed(2)} h`, 10, yPos);
+
+  // ⚠️ MENTION
+  yPos += 12;
+  pdf.setFontSize(9);
+  pdf.text(
+    "Document personnel – valeurs indicatives – ne constitue pas un bulletin de paie",
+    10,
+    yPos
+  );
+
+  pdf.save(`heures_mensuelles_${currentKey}.pdf`);
+}
+function formatDate(d){
+  return d.toLocaleDateString("fr-FR");
+}
 function exportAnnualPDF(){
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
-  let y=15;
-  pdf.text("Bilan annuel – Heures supplémentaires",10,y); y+=10;
 
-  Object.keys(DATA).sort().forEach(k=>{
-    pdf.text(k+" → "+(DATA[k].carry||0)+" h",10,y);
-    y+=6;
-    if(y>270){pdf.addPage();y=15;}
+  const months = Object.keys(DATA)
+    .filter(k => /^\d{4}-\d{2}$/.test(k))
+    .sort();
+
+  if(months.length === 0){
+    alert("Aucune donnée annuelle");
+    return;
+  }
+
+  const year = months[0].split("-")[0];
+  let yPos = 15;
+
+  // 🧾 TITRE
+  pdf.setFontSize(14);
+  pdf.text("Bilan annuel – Heures supplémentaires", 10, yPos);
+  yPos += 8;
+
+  pdf.setFontSize(11);
+  pdf.text(`Année : ${year}`, 10, yPos);
+  yPos += 10;
+
+  // 🗂️ EN-TÊTE TABLEAU
+  pdf.setFontSize(10);
+  pdf.text("Mois", 10, yPos);
+  pdf.text("Heures période", 45, yPos);
+  pdf.text("Payées", 90, yPos);
+  pdf.text("Reliquat fin", 130, yPos);
+  yPos += 4;
+  pdf.line(10, yPos, 200, yPos);
+  yPos += 6;
+
+  let totalPeriod = 0;
+  let totalPaid = 0;
+  let finalCarry = 0;
+
+  months.forEach(key=>{
+    const month = DATA[key];
+    const { start, end } = getPeriodBounds(key);
+    const [y, m] = key.split("-").map(Number);
+
+    let periodHours = 0;
+
+    Object.entries(month.days || {}).forEach(([d,h])=>{
+      const date = new Date(y, m - 1, d);
+      if(date >= start && date <= end){
+        periodHours += h;
+      }
+    });
+
+    totalPeriod += periodHours;
+    totalPaid += (month.paid || 0);
+    finalCarry = month.carry || finalCarry;
+
+    pdf.text(key, 10, yPos);
+    pdf.text(periodHours.toFixed(2) + " h", 45, yPos);
+    pdf.text((month.paid || 0).toFixed(2) + " h", 90, yPos);
+    pdf.text((month.carry || 0).toFixed(2) + " h", 130, yPos);
+
+    yPos += 6;
+    if(yPos > 270){
+      pdf.addPage();
+      yPos = 15;
+    }
   });
 
-  pdf.save("heures_annuelles.pdf");
+  // 🔻 SÉPARATEUR
+  yPos += 6;
+  pdf.line(10, yPos, 200, yPos);
+  yPos += 8;
+
+  // 📊 RÉCAP GLOBAL
+  pdf.setFontSize(11);
+  pdf.text(`Total heures sur période : ${totalPeriod.toFixed(2)} h`, 10, yPos); yPos += 6;
+  pdf.text(`Total heures payées : ${totalPaid.toFixed(2)} h`, 10, yPos); yPos += 6;
+  pdf.text(`Reliquat final au 31/12 : ${finalCarry.toFixed(2)} h`, 10, yPos);
+
+  // ⚠️ MENTION LÉGALE
+  yPos += 12;
+  pdf.setFontSize(9);
+  pdf.text(
+    "Document personnel – valeurs indicatives – ne constitue pas un bulletin de paie",
+    10,
+    yPos
+  );
+
+  pdf.save(`bilan_annuel_heures_sup_${year}.pdf`);
 }
 
 loadMonth();
@@ -973,19 +1127,16 @@ function saveYearData(year, data){
   );
 }
 function recalcCascade(){
-  // 📅 Tous les mois connus, toutes années confondues
   const months = Object.keys(DATA)
     .filter(k => /^\d{4}-\d{2}$/.test(k))
     .sort();
 
-  // 🔄 reset des reports
   months.forEach(k => DATA[k].carry = 0);
 
   for(let i = 0; i < months.length; i++){
     const key = months[i];
     const month = DATA[key];
 
-    // 🔒 mois précédent réel (et existant)
     const prevKey = months[i - 1];
     const prevCarry =
       prevKey && DATA[prevKey]
@@ -994,7 +1145,8 @@ function recalcCascade(){
 
     const { start, end } = getPeriodBounds(key);
 
-    let inPeriod = 0;
+    let periodHours = 0;
+    let afterClosingHours = 0;
 
     Object.entries(month.days || {}).forEach(([d,h])=>{
       const date = new Date(
@@ -1004,19 +1156,25 @@ function recalcCascade(){
       );
 
       if(date >= start && date <= end){
-        inPeriod += h;
+        periodHours += h;
+      } else if(date > end){
+        // 🔥 FIN DE MOIS → REPORT
+        afterClosingHours += h;
       }
     });
 
     const paid = parseFloat(month.paid) || 0;
 
-    // 💰 logique de paiement sécurisée
+    // 💰 logique de paiement
     const remainingCarry = Math.max(0, prevCarry - paid);
     const paidOnPeriod = Math.max(0, paid - prevCarry);
-    const remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
+    const remainingPeriod = Math.max(0, periodHours - paidOnPeriod);
 
-    // ✅ report final du mois
-    month.carry = remainingCarry + remainingPeriod;
+    // ✅ REPORT FINAL CORRECT
+    month.carry =
+      remainingCarry +
+      remainingPeriod +
+      afterClosingHours;
   }
 }
 function importJSONFile(e){
