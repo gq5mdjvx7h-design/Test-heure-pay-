@@ -224,8 +224,6 @@ input[type="number"]{
   <p>Heures payées : <input type="number" id="paidHours" step="0.25"></p>
   <p>Reliquat reporté : <b id="carryOver">0.00</b> h</p>
 
-  <button id="lockBtn">🔓 Mois modifiable</button>
-</div>
 
 <div class="card">
   <h3>💰 Valeur €</h3>
@@ -453,7 +451,6 @@ function loadMonth(){
 
   renderCalendar();
   recalc();
-  updateLockUI();
   scrollToToday();
 }
 
@@ -501,7 +498,16 @@ if(selected.getDay() !== 0){
   save();
   renderCalendar();
   recalc();
-};
+}
+closingDate.addEventListener("blur", () => {
+  const cal = document.getElementById("calendar");
+  if(!cal) return;
+
+  // Forcer repaint Safari iOS
+  cal.style.display = "none";
+  cal.offsetHeight; // reflow
+  cal.style.display = "grid";
+});
 function scrollToToday(){
   const today = new Date().toISOString().slice(0,7);
   if(currentKey !== today) return;
@@ -844,11 +850,6 @@ const payload = {
 
   document.getElementById("fileDate").textContent =
     new Date().toLocaleDateString();
-}
-function updateLockUI(){
-  lockBtn.textContent = DATA[currentKey].locked
-    ? "🔒 Mois verrouillé"
-    : "🔓 Mois modifiable";
 }
 /* =======================
    PARAMS €
