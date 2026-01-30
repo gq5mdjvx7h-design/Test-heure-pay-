@@ -1002,10 +1002,7 @@ function exportMonthlyPDF(){
 
   // 🧮 RÉCAP
   const paid = month.paid || 0;
-  const prevCarry =
-    Object.keys(DATA).sort().indexOf(currentKey) > 0
-      ? DATA[Object.keys(DATA).sort()[Object.keys(DATA).sort().indexOf(currentKey)-1]].carry
-      : 0;
+  const prevCarry = getPreviousCarry(currentKey);
 
   pdf.setFontSize(11);
   pdf.text(`Report précédent : ${prevCarry.toFixed(2)} h`, 10, yPos); yPos += 6;
@@ -1149,14 +1146,28 @@ function recalcCascade(){
     .filter(k => /^\d{4}-\d{2}$/.test(k))
     .sort();
 
-  let runningCarry = 0; // 🔁 stock d'heures continu
+  // 🔑 1️⃣ trouver le reliquat AVANT le premier mois
+  let runningCarry = 0;
 
+  if(months.length){
+    const firstKey = months[0];
+
+    Object.keys(DATA)
+      .filter(k => k < firstKey)
+      .sort()
+      .forEach(k => {
+        if(DATA[k].carry != null){
+          runningCarry = DATA[k].carry;
+        }
+      });
+  }
+
+  // 🔁 2️⃣ cascade réelle "au fil de l'eau"
   months.forEach(key => {
     const month = DATA[key];
     const { start, end } = getPeriodBounds(key);
     const [y, m] = key.split("-").map(Number);
 
-    // 🔢 heures de la période uniquement
     let periodHours = 0;
 
     Object.entries(month.days || {}).forEach(([d, h]) => {
@@ -1168,17 +1179,12 @@ function recalcCascade(){
 
     const paid = Number(month.paid) || 0;
 
-    // ➕ alimentation du stock
-    runningCarry += periodHours;
+    runningCarry += periodHours; // ➕ alimentation
+    runningCarry -= paid;        // ➖ consommation
 
-    // ➖ paiement
-    runningCarry -= paid;
-
-    // 🔒 jamais négatif
     if(runningCarry < 0) runningCarry = 0;
 
-    // 💾 sauvegarde du reliquat du mois
-    month.carry = runningCarry;
+    month.carry = runningCarry; // 💾 état du stock
   });
 }
 function importJSONFile(e){
