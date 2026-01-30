@@ -341,7 +341,28 @@ monthPicker.onchange = loadMonth;
 /* =======================
    CALENDRIER
 ======================= */
+function getPeriodBounds(monthKey){
+  const [y, m] = monthKey.split("-").map(Number);
 
+  // Mois précédent
+  const prevMonth = new Date(y, m - 2, 1);
+  const prevKey =
+    prevMonth.getFullYear() + "-" +
+    String(prevMonth.getMonth() + 1).padStart(2, "0");
+
+  const prevClosing = DATA[prevKey]?.closing || 31;
+  const currentClosing = DATA[monthKey].closing;
+
+  const start = new Date(
+    prevMonth.getFullYear(),
+    prevMonth.getMonth(),
+    prevClosing + 1
+  );
+
+  const end = new Date(y, m - 1, currentClosing);
+
+  return { start, end };
+}
 function loadMonth(){
   currentKey = monthPicker.value;
   const year = getYearFromMonth(currentKey);
@@ -562,45 +583,48 @@ function confirmManual(){
    CALCUL
 ======================= */
 function recalc(){
-  const close = DATA[currentKey].closing || 31;
+  const { start, end } = getPeriodBounds(currentKey);
 
-  let inPeriod = 0;
-  let outPeriod = 0;
+  let periodHours = 0;
 
-  Object.entries(DATA[currentKey].days).forEach(([d,h])=>{
-    if(parseInt(d) <= close) inPeriod += h;
-    else outPeriod += h;
+  Object.entries(DATA).forEach(([monthKey, month])=>{
+    Object.entries(month.days || {}).forEach(([d,h])=>{
+      const date = new Date(
+        monthKey.split("-")[0],
+        monthKey.split("-")[1] - 1,
+        d
+      );
+
+      if(date >= start && date <= end){
+        periodHours += h;
+      }
+    });
   });
 
-  const year = getYearFromMonth(currentKey);
-  const months = Object.keys(DATA)
-    .filter(k => k.startsWith(year))
-    .sort();
-
-  const idx = months.indexOf(currentKey);
-  const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
-
-  document.getElementById("prevCarry").textContent =
-    prevCarry.toFixed(2);
-
-  const totalWithCarry = inPeriod + prevCarry;
-  document.getElementById("totalMonth").textContent =
-    totalWithCarry.toFixed(2);
-
-  // 🔒 Affichage du report calculé (source unique)
-  document.getElementById("carryOver").textContent =
-    (DATA[currentKey].carry || 0).toFixed(2);
-
-  // ⚖️ Majoration légale (UNIQUEMENT heures de la période)
-  const h25 = Math.min(8, inPeriod);
-  const h50 = Math.max(0, inPeriod - 8);
+  // 🔢 Majoration sur LES HEURES DE LA PÉRIODE
+  const h25 = Math.min(8, periodHours);
+  const h50 = Math.max(0, periodHours - 8);
 
   document.getElementById("hours25").textContent = h25.toFixed(2);
   document.getElementById("hours50").textContent = h50.toFixed(2);
 
-  if(unlocked){
-    calcEuro();
-  }
+  // 🔁 Report précédent (inchangé)
+  const year = getYearFromMonth(currentKey);
+  const months = Object.keys(DATA).filter(k=>k.startsWith(year)).sort();
+  const idx = months.indexOf(currentKey);
+  const prevCarry = idx > 0 ? DATA[months[idx-1]].carry : 0;
+
+  document.getElementById("prevCarry").textContent =
+    prevCarry.toFixed(2);
+
+  document.getElementById("totalMonth").textContent =
+    (periodHours + prevCarry).toFixed(2);
+
+  document.getElementById("carryOver").textContent =
+    (DATA[currentKey].carry || 0).toFixed(2);
+
+  if(unlocked) calcEuro();
+}
 }
 function calcEuro(){
   if(!unlocked) return;
