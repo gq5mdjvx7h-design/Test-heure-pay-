@@ -594,10 +594,8 @@ let paidOnPeriod = Math.max(0, paid - prevCarry);
 // 📆 Heures de la période encore dues
 let remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
 
-// 📦 Reliquat total à reporter
-const totalCarry = remainingCarry + remainingPeriod;
 document.getElementById("carryOver").textContent =
-  totalCarry.toFixed(2);
+  (DATA[currentKey].carry || 0).toFixed(2);
 
 // ⚖️ Majoration UNIQUEMENT sur les heures de la période
 const h25 = Math.min(8, remainingPeriod);
