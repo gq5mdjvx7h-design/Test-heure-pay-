@@ -589,8 +589,7 @@ function recalc(){
   const weeks = {};
 
   Object.entries(DATA)
-    .filter(([k]) => k.startsWith(getYearFromMonth(currentKey)))
-    .forEach(([monthKey, month])=>{
+  .forEach(([monthKey, month])=>{
       Object.entries(month.days || {}).forEach(([d,h])=>{
         const date = new Date(
           monthKey.split("-")[0],
