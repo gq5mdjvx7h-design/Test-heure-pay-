@@ -710,9 +710,10 @@ function getPreviousCarry(monthKey){
 
   for(const k of months){
     if(k === monthKey) break;
-    carry = DATA[k].carry || carry;
+    if(DATA[k].carry != null){
+      carry = DATA[k].carry;
+    }
   }
-
   return carry;
 }
 /* =======================
@@ -778,7 +779,7 @@ function recalc(){
     prevCarry +
     periodHours -
     paid;
-
+DATA[currentKey].carry = Math.max(0, computedCarry);
   document.getElementById("carryOver").textContent =
     Math.max(0, computedCarry).toFixed(2);
 
