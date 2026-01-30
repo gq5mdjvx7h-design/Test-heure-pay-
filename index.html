@@ -587,7 +587,9 @@ function recalc(){
 
   let periodHours = 0;
 
-  Object.entries(DATA).forEach(([monthKey, month])=>{
+  Object.entries(DATA)
+  .filter(([k]) => k.startsWith(getYearFromMonth(currentKey)))
+  .forEach(([monthKey, month])=>{
     Object.entries(month.days || {}).forEach(([d,h])=>{
       const date = new Date(
         monthKey.split("-")[0],
@@ -624,7 +626,6 @@ function recalc(){
     (DATA[currentKey].carry || 0).toFixed(2);
 
   if(unlocked) calcEuro();
-}
 }
 function calcEuro(){
   if(!unlocked) return;
@@ -879,7 +880,7 @@ let paidOnPeriod = Math.max(0, paid - prevCarry);
 // 📆 Heures de la période encore dues
 let remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
 
-month.carry = remainingCarry + remainingPeriod + outPeriod;
+month.carry = remainingCarry + remainingPeriod;
 
     }
   });
