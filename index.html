@@ -191,7 +191,16 @@ input[type="number"]{
 <div class="main">
 
   <h1>⏱️ Heures supplémentaires</h1>
-
+<p style="
+  text-align:center;
+  font-size:14px;
+  color:#9aa0a6;
+  margin-top:-10px;
+">
+  Suivi précis des heures supplémentaires basé sur la
+  <b>logique réelle de paie mensuelle</b>
+  (clôture mensuelle + report automatique)
+</p>
   <div class="card">
     <label>Mois suivi</label>
     <input type="month" id="monthPicker">
@@ -207,6 +216,11 @@ input[type="number"]{
 <p>Total mois : <b id="totalMonth">0.00</b> h</p>
 <p>Heures à 25 % : <b id="hours25">0.00</b> h</p>
 <p>Heures à 50 % : <b id="hours50">0.00</b> h</p>
+<p style="font-size:12px;color:#aaa;margin-top:8px">
+  ℹ️ Calcul basé sur une hypothèse standard :
+  25% jusqu’à 8h hebdomadaires, puis 50%.
+  Peut varier selon la convention collective.
+</p>
   <p>Heures payées : <input type="number" id="paidHours" step="0.25"></p>
   <p>Reliquat reporté : <b id="carryOver">0.00</b> h</p>
 
@@ -240,6 +254,9 @@ input[type="number"]{
 </div>
 <div class="card">
   <span class="badge ok">🟢 Sauvegarde locale auto</span>
+  <span class="badge file">
+  👤 Usage personnel – outil indicatif
+</span>
   <span class="badge file">💾 Dernier fichier : <span id="fileDate">—</span></span>
   <button onclick="exportJSON()">💾 Sauvegarde dans un fichier</button>
   <input type="file" id="importFile" accept=".json" style="display:none">
@@ -295,9 +312,29 @@ input[type="number"]{
     <button class="secondary" onclick="closeTutorial()">Fermer</button>
   </div>
 </div>
-
+<div class="modal" id="onboardingModal">
+  <div class="modal-content">
+    <h2>👋 Bienvenue</h2>
+    <ol style="font-size:14px">
+      <li>Sélectionne le mois suivi</li>
+      <li>Définis le dimanche de clôture</li>
+      <li>Clique sur un jour pour ajouter des heures</li>
+      <li>Renseigne les heures payées</li>
+    </ol>
+    <button onclick="closeOnboarding()">Commencer</button>
+  </div>
+</div>
 <script>
+function acceptLegal(){
+  localStorage.setItem("LEGAL_OK","1");
+  document.getElementById("legalModal").style.display="none";
+}
 
+window.addEventListener("load",()=>{
+  if(!localStorage.getItem("LEGAL_OK")){
+    document.getElementById("legalModal").style.display="flex";
+  }
+});
 /* =======================
    DONNÉES
 ======================= */
@@ -341,6 +378,19 @@ monthPicker.onchange = loadMonth;
 /* =======================
    CALENDRIER
 ======================= */
+function closeOnboarding(){
+  localStorage.setItem("ONBOARDING_DONE","1");
+  document.getElementById("onboardingModal").style.display="none";
+}
+
+window.addEventListener("load",()=>{
+  if(
+    localStorage.getItem("LEGAL_OK") &&
+    !localStorage.getItem("ONBOARDING_DONE")
+  ){
+    document.getElementById("onboardingModal").style.display="flex";
+  }
+});
 function getPeriodBounds(monthKey){
   const [y, m] = monthKey.split("-").map(Number);
 
@@ -982,7 +1032,20 @@ if(payload.SETTINGS){
   e.target.value = ""; // reset input
 }
 document.getElementById("importFile").addEventListener("change", importJSONFile);
+
 </script>
+<div class="modal" id="legalModal">
+  <div class="modal-content">
+    <h2>⚠️ Avertissement important</h2>
+    <p style="font-size:14px">
+      Cet outil est un <b>simulateur personnel</b>.<br><br>
+      Les calculs sont indicatifs et peuvent différer
+      de votre bulletin de paie réel.<br><br>
+      <b>Seuls les documents de l’employeur font foi.</b>
+    </p>
+    <button onclick="acceptLegal()">J’ai compris</button>
+  </div>
+</div>
 <div class="card" style="font-size:13px;color:#aaa">
   <h3>📘 Notice utilisateur</h3>
 
