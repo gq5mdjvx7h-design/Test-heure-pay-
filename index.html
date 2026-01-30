@@ -573,43 +573,35 @@ function recalc(){
   });
 
   const year = getYearFromMonth(currentKey);
-const months = Object.keys(DATA)
-  .filter(k => k.startsWith(year))
-  .sort();
+  const months = Object.keys(DATA)
+    .filter(k => k.startsWith(year))
+    .sort();
 
-const idx = months.indexOf(currentKey);
-const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
-  const paid = parseFloat(DATA[currentKey].paid) || 0;
+  const idx = months.indexOf(currentKey);
+  const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
 
-  document.getElementById("prevCarry").textContent = prevCarry.toFixed(2);
+  document.getElementById("prevCarry").textContent =
+    prevCarry.toFixed(2);
+
   const totalWithCarry = inPeriod + prevCarry;
-document.getElementById("totalMonth").textContent =
-  totalWithCarry.toFixed(
-// Heures réellement effectuées sur la période
-const periodHours = inPeriod;
+  document.getElementById("totalMonth").textContent =
+    totalWithCarry.toFixed(2);
 
-// Majoration légale (indépendante du paiement)
-const h25 = Math.min(8, periodHours);
-const h50 = Math.max(0, periodHours - 8);
+  // 🔒 Affichage du report calculé (source unique)
+  document.getElementById("carryOver").textContent =
+    (DATA[currentKey].carry || 0).toFixed(2);
 
-document.getElementById("hours25").textContent = h25.toFixed(2);
-document.getElementById("hours50").textContent = h50.toFixed(2);
-document.getElementById("carryOver").textContent =
-  (DATA[currentKey].carry || 0).toFixed(2);
+  // ⚖️ Majoration légale (UNIQUEMENT heures de la période)
+  const h25 = Math.min(8, inPeriod);
+  const h50 = Math.max(0, inPeriod - 8);
 
-// ⚖️ Majoration UNIQUEMENT sur les heures de la période
-const h25 = Math.min(8, remainingPeriod);
-const h50 = Math.max(0, remainingPeriod - 8);
   document.getElementById("hours25").textContent = h25.toFixed(2);
   document.getElementById("hours50").textContent = h50.toFixed(2);
 
   if(unlocked){
-  calcEuro();
+    calcEuro();
+  }
 }
-}
-/* =======================
-   € CALCUL
-======================= */
 function calcEuro(){
   if(!unlocked) return;
 
