@@ -349,9 +349,8 @@ window.addEventListener("load",()=>{
   }
 
   if(!localStorage.getItem("ONBOARDING_DONE")){
-    document.getElementById("onboardingModal").classList.add("open");
-document.getElementById("onboardingModal").classList.remove("open");
-  }
+  document.getElementById("onboardingModal").classList.add("open");
+}
 });
 
 
@@ -400,7 +399,7 @@ monthPicker.onchange = loadMonth;
 ======================= */
 function closeOnboarding(){
   localStorage.setItem("ONBOARDING_DONE","1");
-  document.getElementById("onboardingModal").style.display="none";
+  document.getElementById("onboardingModal").classList.remove("open");
 }
 
 function getPeriodBounds(monthKey){
