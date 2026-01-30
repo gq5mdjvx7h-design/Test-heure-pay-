@@ -397,6 +397,13 @@ monthPicker.onchange = loadMonth;
 /* =======================
    CALENDRIER
 ======================= */
+function getLastSunday(year, monthIndex){
+  const lastDay = new Date(year, monthIndex + 1, 0); // dernier jour du mois
+  const day = lastDay.getDay(); // 0 = dimanche
+  const diff = day === 0 ? 0 : day;
+  lastDay.setDate(lastDay.getDate() - diff);
+  return lastDay.getDate();
+}
 function closeOnboarding(){
   localStorage.setItem("ONBOARDING_DONE","1");
   document.getElementById("onboardingModal").classList.remove("open");
@@ -438,14 +445,16 @@ function loadMonth(){
   DATA = loadYearData(year);
 
   if(!DATA[currentKey]){
-    DATA[currentKey] = {
-      days: {},
-      paid: 0,
-      carry: 0,
-      closing: 31,
-      locked: false
-    };
-  }
+  const [y, m] = currentKey.split("-").map(Number);
+
+  DATA[currentKey] = {
+    days: {},
+    paid: 0,
+    carry: 0,
+    closing: getLastSunday(y, m - 1), // ✅ dernier dimanche automatique
+    locked: false
+  };
+}
 
   paidInput.value = DATA[currentKey].paid || 0;
 
