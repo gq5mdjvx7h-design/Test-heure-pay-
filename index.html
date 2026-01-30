@@ -875,13 +875,21 @@ function recalcCascade(){
 
       const prevCarry = prevMonth ? prevMonth.carry : 0;
 
-      let inPeriod = 0;
-      let outPeriod = 0;
+      const { start, end } = getPeriodBounds(key);
 
-      Object.entries(month.days || {}).forEach(([d,h])=>{
-        if(parseInt(d) <= month.closing) inPeriod += h;
-        else outPeriod += h;
-      });
+let inPeriod = 0;
+
+Object.entries(month.days || {}).forEach(([d,h])=>{
+  const date = new Date(
+    key.split("-")[0],
+    key.split("-")[1] - 1,
+    d
+  );
+
+  if(date >= start && date <= end){
+    inPeriod += h;
+  }
+});
 
       const paid = parseFloat(month.paid) || 0;
 
