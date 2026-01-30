@@ -1149,35 +1149,28 @@ function saveYearData(year, data){
   );
 }
 function recalcCascade(){
-  const months = Object.keys(DATA)
-    .filter(k => /^\d{4}-\d{2}$/.test(k))
-    .sort();
+  // 🔗 fusion de toutes les années
+  const allMonths = [];
 
-  // 🔑 1️⃣ trouver le reliquat AVANT le premier mois
+  Object.values(ALL_DATA).forEach(yearData=>{
+    Object.keys(yearData).forEach(key=>{
+      if(/^\d{4}-\d{2}$/.test(key)){
+        allMonths.push({ key, month: yearData[key] });
+      }
+    });
+  });
+
+  allMonths.sort((a,b)=> a.key.localeCompare(b.key));
+
   let runningCarry = 0;
 
-  if(months.length){
-    const firstKey = months[0];
-
-    Object.keys(DATA)
-      .filter(k => k < firstKey)
-      .sort()
-      .forEach(k => {
-        if(DATA[k].carry != null){
-          runningCarry = DATA[k].carry;
-        }
-      });
-  }
-
-  // 🔁 2️⃣ cascade réelle "au fil de l'eau"
-  months.forEach(key => {
-    const month = DATA[key];
+  allMonths.forEach(({ key, month })=>{
     const { start, end } = getPeriodBounds(key);
     const [y, m] = key.split("-").map(Number);
 
     let periodHours = 0;
 
-    Object.entries(month.days || {}).forEach(([d, h]) => {
+    Object.entries(month.days || {}).forEach(([d,h])=>{
       const date = new Date(y, m - 1, d);
       if(date >= start && date <= end){
         periodHours += h;
@@ -1186,12 +1179,12 @@ function recalcCascade(){
 
     const paid = Number(month.paid) || 0;
 
-    runningCarry += periodHours; // ➕ alimentation
-    runningCarry -= paid;        // ➖ consommation
+    runningCarry += periodHours;
+    runningCarry -= paid;
 
     if(runningCarry < 0) runningCarry = 0;
 
-    month.carry = runningCarry; // 💾 état du stock
+    month.carry = runningCarry;
   });
 }
 function importJSONFile(e){
