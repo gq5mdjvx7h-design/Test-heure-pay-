@@ -585,40 +585,52 @@ function confirmManual(){
 function recalc(){
   const { start, end } = getPeriodBounds(currentKey);
 
-  let periodHours = 0;
+  // 🔢 Heures par semaine ISO (lundi → dimanche)
+  const weeks = {};
 
   Object.entries(DATA)
-  .filter(([k]) => k.startsWith(getYearFromMonth(currentKey)))
-  .forEach(([monthKey, month])=>{
-    Object.entries(month.days || {}).forEach(([d,h])=>{
-      const date = new Date(
-        monthKey.split("-")[0],
-        monthKey.split("-")[1] - 1,
-        d
-      );
+    .filter(([k]) => k.startsWith(getYearFromMonth(currentKey)))
+    .forEach(([monthKey, month])=>{
+      Object.entries(month.days || {}).forEach(([d,h])=>{
+        const date = new Date(
+          monthKey.split("-")[0],
+          monthKey.split("-")[1] - 1,
+          d
+        );
 
-      if(date >= start && date <= end){
-        periodHours += h;
-      }
+        if(date < start || date > end) return;
+
+        // 📅 Calcul du lundi de la semaine
+        const monday = new Date(date);
+        const day = monday.getDay() || 7; // dimanche = 7
+        monday.setDate(monday.getDate() - day + 1);
+        const weekKey = monday.toISOString().slice(0,10);
+
+        weeks[weekKey] = (weeks[weekKey] || 0) + h;
+      });
     });
+
+  // 🧮 Application des majorations SEMAINE PAR SEMAINE
+  let total25 = 0;
+  let total50 = 0;
+  let periodHours = 0;
+
+  Object.values(weeks).forEach(weekHours=>{
+    periodHours += weekHours;
+    total25 += Math.min(8, weekHours);
+    total50 += Math.max(0, weekHours - 8);
   });
 
-  // 🔢 Majoration sur LES HEURES DE LA PÉRIODE
-  const h25 = Math.min(8, periodHours);
-  const h50 = Math.max(0, periodHours - 8);
+  document.getElementById("hours25").textContent = total25.toFixed(2);
+  document.getElementById("hours50").textContent = total50.toFixed(2);
 
-  document.getElementById("hours25").textContent = h25.toFixed(2);
-  document.getElementById("hours50").textContent = h50.toFixed(2);
-
-  // 🔁 Report précédent (inchangé)
+  // 🔁 Report précédent
   const year = getYearFromMonth(currentKey);
   const months = Object.keys(DATA).filter(k=>k.startsWith(year)).sort();
   const idx = months.indexOf(currentKey);
   const prevCarry = idx > 0 ? DATA[months[idx-1]].carry : 0;
 
-  document.getElementById("prevCarry").textContent =
-    prevCarry.toFixed(2);
-
+  document.getElementById("prevCarry").textContent = prevCarry.toFixed(2);
   document.getElementById("totalMonth").textContent =
     (periodHours + prevCarry).toFixed(2);
 
