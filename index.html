@@ -584,16 +584,16 @@ const prevCarry = idx > 0 ? DATA[months[idx - 1]].carry : 0;
   document.getElementById("prevCarry").textContent = prevCarry.toFixed(2);
   const totalWithCarry = inPeriod + prevCarry;
 document.getElementById("totalMonth").textContent =
-  totalWithCarry.toFixed(2);
-  // 🔒 Report précédent (jamais remajoré)
-let remainingCarry = Math.max(0, prevCarry - paid);
+  totalWithCarry.toFixed(
+// Heures réellement effectuées sur la période
+const periodHours = inPeriod;
 
-// 💡 Part du paiement qui dépasse le report
-let paidOnPeriod = Math.max(0, paid - prevCarry);
+// Majoration légale (indépendante du paiement)
+const h25 = Math.min(8, periodHours);
+const h50 = Math.max(0, periodHours - 8);
 
-// 📆 Heures de la période encore dues
-let remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
-
+document.getElementById("hours25").textContent = h25.toFixed(2);
+document.getElementById("hours50").textContent = h50.toFixed(2);
 document.getElementById("carryOver").textContent =
   (DATA[currentKey].carry || 0).toFixed(2);
 
