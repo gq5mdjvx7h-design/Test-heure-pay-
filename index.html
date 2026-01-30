@@ -341,12 +341,18 @@ function acceptLegal(){
   localStorage.setItem("LEGAL_OK","1");
   document.getElementById("legalModal").style.display="none";
 }
-
 window.addEventListener("load",()=>{
   if(!localStorage.getItem("LEGAL_OK")){
     document.getElementById("legalModal").style.display="flex";
+    return;
+  }
+
+  if(!localStorage.getItem("ONBOARDING_DONE")){
+    document.getElementById("onboardingModal").style.display="flex";
   }
 });
+
+
 /* =======================
    DONNÉES
 ======================= */
