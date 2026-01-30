@@ -344,23 +344,32 @@ monthPicker.onchange = loadMonth;
 function getPeriodBounds(monthKey){
   const [y, m] = monthKey.split("-").map(Number);
 
+  const currentMonth = new Date(y, m - 1, 1);
+
   // mois précédent
   const prevMonthDate = new Date(y, m - 2, 1);
   const prevKey =
     prevMonthDate.getFullYear() + "-" +
     String(prevMonthDate.getMonth() + 1).padStart(2,"0");
 
-  const prevClosingDay = DATA[prevKey]?.closing || 0;
+  let start;
 
-  // 🔒 fin période = dimanche de clôture
+  if(DATA[prevKey] && DATA[prevKey].closing){
+    // lundi suivant la clôture précédente
+    start = new Date(
+      prevMonthDate.getFullYear(),
+      prevMonthDate.getMonth(),
+      DATA[prevKey].closing + 1
+    );
+  } else {
+    // 🔒 premier lundi du mois courant
+    start = new Date(currentMonth);
+    const d = start.getDay() || 7;
+    start.setDate(start.getDate() - d + 1);
+  }
+
+  // fin période = dimanche de clôture
   const end = new Date(y, m - 1, DATA[monthKey].closing);
-
-  // 🔒 début période = lundi suivant la clôture précédente
-  const start = new Date(
-    prevMonthDate.getFullYear(),
-    prevMonthDate.getMonth(),
-    prevClosingDay + 1
-  );
 
   return { start, end };
 }
