@@ -863,8 +863,7 @@ let paidOnPeriod = Math.max(0, paid - prevCarry);
 // 📆 Heures de la période encore dues
 let remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
 
-// 📦 Reliquat du mois (STOCKÉ)
-month.carry = remainingCarry + remainingPeriod;
+month.carry = remainingCarry + remainingPeriod + outPeriod;
 
     }
   });
