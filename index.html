@@ -645,12 +645,19 @@ function applyHours(h){
 
   DATA[currentKey].days[currentDay] =
     (DATA[currentKey].days[currentDay] || 0) + h;
-
+// 🔴 AJOUTE CETTE 
+registerYear(getYearFromMonth(currentKey));
   save();
   renderCalendar(); // ✅ AJOUT
   recalc();
   closeHours();
+  DATA[currentKey].days[currentDay] =
+  (DATA[currentKey].days[currentDay] || 0) + h;
+
+
+
 }
+
 function confirmManual(){
   const input = document.getElementById("manualHours");
   const h = parseFloat(input.value);
