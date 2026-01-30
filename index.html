@@ -604,7 +604,10 @@ function recalc(){
         const monday = new Date(date);
         const day = monday.getDay() || 7; // dimanche = 7
         monday.setDate(monday.getDate() - day + 1);
-        const weekKey = monday.toISOString().slice(0,10);
+        const weekKey =
+  monday.getFullYear() + "-" +
+  String(monday.getMonth()+1).padStart(2,"0") + "-" +
+  String(monday.getDate()).padStart(2,"0");
 
         weeks[weekKey] = (weeks[weekKey] || 0) + h;
       });
