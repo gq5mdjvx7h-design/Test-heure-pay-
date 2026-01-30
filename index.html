@@ -421,12 +421,16 @@ function getPeriodBounds(monthKey){
 
   let start;
 
-  if(DATA[prevKey] && DATA[prevKey].closing){
+  const prevYear = prevKey.split("-")[0];
+const prevMonth =
+  ALL_DATA[prevYear] && ALL_DATA[prevYear][prevKey];
+
+if(prevMonth && prevMonth.closing){
     // lundi suivant la clôture précédente (clôture = dimanche)
     start = new Date(
       prevMonthDate.getFullYear(),
       prevMonthDate.getMonth(),
-      DATA[prevKey].closing + 1
+      prevMonth.closing + 1
     );
   } else {
     // aucun mois précédent → début au 1er du mois courant
