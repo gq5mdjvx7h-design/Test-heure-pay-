@@ -693,6 +693,7 @@ function save(){
   const year = getYearFromMonth(currentKey);
 
   // Sauvegarde réelle des données
+recalcCascade(); // 🔥 recalcul gl
   saveYearData(year, DATA);
 
   // Date de sauvegarde locale
