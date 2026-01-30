@@ -676,10 +676,12 @@ function toggleChangeCode(){
    SAUVEGARDE
 ======================= */
 function save(){
-  const year = getYearFromMonth(currentKey);
-  recalcCascade(currentKey); // ✅ recalcul global
-  saveYearData(year, DATA);
-  autoBackup(year);
+  localStorage.setItem(STORAGE.data, JSON.stringify(data))
+
+  const stamp = new Date().toISOString()
+  localStorage.setItem("AUTO_SAVE_DATE_" + currentSuffix, stamp)
+
+  updateSaveBadges()
 }
 async function changeCode(){
   const oldC = document.getElementById("oldCode").value;
@@ -800,14 +802,11 @@ function exportAnnualPDF(){
 
 loadMonth();
 
-function autoBackup(year){
-  const stamp = new Date().toISOString().slice(0,10);
-  const key = kBackup(year, stamp);
-
-  localStorage.setItem(
-    key,
-    JSON.stringify({DATA, SETTINGS})
-  );
+function autoBackup(){
+  const stamp = new Date().toISOString()
+  localStorage.setItem("AUTO_SAVE_DATE_" + currentSuffix, stamp)
+  updateSaveBadges()
+}
 
   // 🧹 Nettoyage : max 30 backups par année
   const keys = Object.keys(localStorage)
