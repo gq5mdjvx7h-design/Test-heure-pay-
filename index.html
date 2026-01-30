@@ -868,12 +868,6 @@ let remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
 // 📦 Reliquat du mois (STOCKÉ)
 month.carry = remainingCarry + remainingPeriod;
 
-
-      // 🔥 REPORT RÉEL vers le mois suivant
-      if(months[i + 1]){
-        DATA[months[i + 1]].carry =
-          (DATA[months[i + 1]].carry || 0) + outPeriod;
-      }
     }
   });
 }
