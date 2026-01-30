@@ -869,18 +869,24 @@ function saveYearData(year, data){
   );
 }
 function recalcCascade(){
-  // 🔁 Tous les mois, toutes années confondues
-  const months = Object.keys(DATA).sort(); // YYYY-MM = ordre naturel
+  // 📅 Tous les mois connus, toutes années confondues
+  const months = Object.keys(DATA)
+    .filter(k => /^\d{4}-\d{2}$/.test(k))
+    .sort();
 
-  // reset
+  // 🔄 reset des reports
   months.forEach(k => DATA[k].carry = 0);
 
   for(let i = 0; i < months.length; i++){
     const key = months[i];
     const month = DATA[key];
-    const prevMonth = i > 0 ? DATA[months[i - 1]] : null;
 
-    const prevCarry = prevMonth ? prevMonth.carry : 0;
+    // 🔒 mois précédent réel (et existant)
+    const prevKey = months[i - 1];
+    const prevCarry =
+      prevKey && DATA[prevKey]
+        ? DATA[prevKey].carry
+        : 0;
 
     const { start, end } = getPeriodBounds(key);
 
@@ -900,11 +906,12 @@ function recalcCascade(){
 
     const paid = parseFloat(month.paid) || 0;
 
-    // 🔒 logique de paiement
+    // 💰 logique de paiement sécurisée
     const remainingCarry = Math.max(0, prevCarry - paid);
     const paidOnPeriod = Math.max(0, paid - prevCarry);
     const remainingPeriod = Math.max(0, inPeriod - paidOnPeriod);
 
+    // ✅ report final du mois
     month.carry = remainingCarry + remainingPeriod;
   }
 }
